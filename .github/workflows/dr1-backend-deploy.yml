@@ -30,6 +30,7 @@ jobs:
           else
             echo "Directory does not exist. Cloning repository..."
             git clone https://github.com/chaaviesol/dr1-backend.git /home/ec2-user/dr_one
+          fi
         EOF
     - name: Cleanup SSH Key
       run: rm private-key.pem
