@@ -29,8 +29,7 @@ jobs:
             git clone https://github.com/chaaviesol/dr1-backend.git /home/ec2-user/dr_one
           else
             cd /home/ec2-user/dr_one
-            git stash || echo "No changes to stash"
-            git pull origin main --allow-unrelated-histories
+            git pull origin main
           fi
         EOF
     - name: Cleanup SSH Key
