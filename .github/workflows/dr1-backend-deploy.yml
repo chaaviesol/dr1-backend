@@ -24,12 +24,13 @@ jobs:
         echo "${SSH_PRIVATE_KEY}" > private-key.pem
         chmod 400 private-key.pem
         ssh -o StrictHostKeyChecking=no -i private-key.pem ec2-user@13.232.117.141 << 'EOF'
-          if [ -d "/home/ec2-user/dr_one/.git" ]; then
-            echo "Directory exists. Pulling latest updates..."
-            cd /home/ec2-user/dr_one && git pull origin main
-          else
-            echo "Directory does not exist. Cloning repository..."
+          if [ ! -d "/home/ec2-user/dr_one/.git" ]; then
+            rm -rf /home/ec2-user/dr_one # Remove the directory if it's not a valid git repo
             git clone https://github.com/chaaviesol/dr1-backend.git /home/ec2-user/dr_one
+          else
+            cd /home/ec2-user/dr_one
+            git stash || echo "No changes to stash"
+            git pull origin main
           fi
         EOF
     - name: Cleanup SSH Key
