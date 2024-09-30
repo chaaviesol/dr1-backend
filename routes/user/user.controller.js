@@ -566,7 +566,7 @@ const userLogin = async (request, response) => {
       return response.status(401).json({
         error: true,
         success: false,
-        message: "Incorrect Email or password!",
+        message: "User does not exist",
       });
     }
 
