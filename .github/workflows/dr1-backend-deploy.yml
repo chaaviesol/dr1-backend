@@ -1,12 +1,9 @@
 name: Deploy Backend Application
 
 on:
-  workflow_dispatch:
-
-# on:
-#  push:
-#    branches:
-#      - main
+ push:
+   branches:
+     - main
 
 jobs:
   deploy-backend:
@@ -31,6 +28,10 @@ jobs:
             cd /home/ec2-user/dr_one
             git pull origin main
           fi
+          cd /home/ec2-user/dr_one
+          npm install
+          npx prisma generate
+          pm2 restart server.js
         EOF
     - name: Cleanup SSH Key
       run: rm private-key.pem
