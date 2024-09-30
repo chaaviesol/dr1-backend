@@ -34,6 +34,9 @@ jobs:
             npx prisma generate
             pm2 restart server.js
           fi
+          cd /home/ec2-user/dr_one
+          npm install
+          npx prisma generate
         EOF
     - name: Cleanup SSH Key
       run: rm private-key.pem
