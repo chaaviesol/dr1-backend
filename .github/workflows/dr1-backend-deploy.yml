@@ -30,13 +30,11 @@ jobs:
           else
             cd /home/ec2-user/dr_one
             git pull origin main
-            npm install
-            npx prisma generate
-            pm2 restart server.js
           fi
           cd /home/ec2-user/dr_one
           npm install
           npx prisma generate
+          pm2 restart server.js
         EOF
     - name: Cleanup SSH Key
       run: rm private-key.pem
