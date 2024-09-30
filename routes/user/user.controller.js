@@ -513,7 +513,7 @@ const userLogin = async (request, response) => {
   const currentDate = new Date();
   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
   const istDate = new Date(currentDate.getTime() + istOffset);
-  const emaillower = email.toLowerCase();
+ 
   if (!email || !password) {
     return response.status(401).json({
       error: true,
@@ -523,6 +523,24 @@ const userLogin = async (request, response) => {
   }
 
   try {
+    const emaillower = email.toLowerCase();
+    const email_id = emaillower;
+    if (validateEmail(email_id)) {
+      console.log("Valid email address");
+    } else {
+      console.log("Invalid email address");
+      const resptext = "Invalid email address";
+      return response.status(401).json({
+        error: true,
+        success: false,
+        message: resptext,
+      });
+    }
+    function validateEmail(email_id) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      return emailRegex.test(email_id);
+    }
     const users = await prisma.user_details.findMany();
     let user = null;
 
