@@ -1227,7 +1227,7 @@ function validateEmail(email) {
 function generateOTP() {
   const characters = "0123456789";
   let otp = "";
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
     otp += characters.charAt(randomIndex);
   }
