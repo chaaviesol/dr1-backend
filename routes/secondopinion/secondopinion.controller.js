@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { encrypt, decrypt } = require("../../utils");
-const moment = require('moment-timezone');
+const moment = require("moment-timezone");
 
 require("dotenv").config();
 const {
@@ -162,54 +162,65 @@ const getallreport = async (request, response) => {
   }
 };
 
-// const getareport = async (request, response) => {
-//   console.log("Fetching report data...");
+const getcussecondopinion = async (request, response) => {
+  console.log("getcusqueryyyyyyyy");
+  try {
+    const user_id = request.user.userId;
+    const usertype = request.user.userType;
 
-//   try {
-//     const { id } = request.body;
+    if (!user_id) {
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+    if (!usertype || usertype != "customer") {
+      return response.status(400).json({
+        error: true,
+        message: "Please login as a customer",
+      });
+    }
+    const allsecop = await prisma.second_opinion_data.findMany({
+      where: {
+        user_id: user_id,
+      },
+      orderBy: {
+        id: "desc",
+      },
+      select: {
+        id: true,
+        department: true,
+        report_image: true,
+        patient_name: true,
+        doctor_name: true,
+        status: true,
+        remarks: true,
+        created_date: true,
+        doctor_remarks: true,
+      },
+    });
 
-//     if (!id) {
-//       return response.status(400).json({
-//         message: "ID is required",
-//         error: true,
-//       });
-//     }
-
-//     const requested = await prisma.second_opinion_data.findFirst({
-//       where: { id: id },
-//     });
-
-//     if (!requested) {
-//       return response.status(204).json({
-//         message: "No data found",
-//         error: false,
-//       });
-//     }
-
-//     if (requested.doctor_remarksid) {
-//       const doctorRemarks = await prisma.doctor_remarks.findMany({
-//         where: { query_id: requested.doctor_remarksid },
-//       });
-
-//       return response.status(200).json({
-//         data: { requested, doctorRemarks },
-//         error: false,
-//       });
-//     }
-
-//     return response.status(200).json({
-//       data: requested,
-//       error: false,
-//     });
-//   } catch (error) {
-//     logger.error(
-//       `Internal server error: ${error.message} in secondopinion getareport API`
-//     );
-//     response.status(500).json({ message: "An error occurred", error: true });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
+    if (allsecop.length > 0) {
+      allsecop.forEach((questions) => (questions.isShowAnswers = false));
+      response.status(200).json({
+        data: allsecop,
+        error: false,
+      });
+    } else {
+      response.status(204).json({
+        message: "No Second opinion",
+        error: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in secondopinion getcussecondopinion API`
+    );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 const getareport = async (request, response) => {
   console.log("getaaaaaaaaddddddddddddddddddaa");
@@ -500,9 +511,9 @@ const getcusquery = async (request, response) => {
             doctorid: {
               select: {
                 name: true,
-                image:true,
-                education_qualification:true,
-                additional_qualification:true
+                image: true,
+                education_qualification: true,
+                additional_qualification: true,
               },
             },
             doctor_remarks: true,
@@ -527,7 +538,7 @@ const getcusquery = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in secondopinion getareport API`
+      `Internal server error: ${error.message} in secondopinion getcusquery API`
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
@@ -752,7 +763,6 @@ const querycomplete = async (request, response) => {
 };
 
 //////////for docadmin///////////
-
 
 const adddocremarks = async (request, response) => {
   const { id, doctor_remarks, status } = request.body;
@@ -1041,4 +1051,5 @@ module.exports = {
   editremarks,
   getcusquery,
   querycomplete,
+  getcussecondopinion,
 };

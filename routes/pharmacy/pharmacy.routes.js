@@ -19,6 +19,7 @@ const {
   medicineadd,
   createinvoice,
   getainvoice,
+  prescriptioninvoice,
 } = require("./pharmacy.controller");
 const PharmacyRouter = express.Router();
 const { upload } = require("../../middleware/Uploadimage");
@@ -46,6 +47,7 @@ PharmacyRouter.post("/checkaddress", auth, checkaddress);
 PharmacyRouter.post("/medicineadd", medicineadd);
 ///////////////invoice///////////////////////////
 PharmacyRouter.post("/createinvoice", createinvoice);
+PharmacyRouter.post("/prescriptioninvoice", prescriptioninvoice);
 PharmacyRouter.post("/getainvoice", getainvoice);
 
 module.exports = PharmacyRouter;

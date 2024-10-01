@@ -215,7 +215,6 @@ const filterpharmacy = async (request, response) => {
 
 ////////////from productadd to salesorder /////////////
 
-
 const productadd = async (request, response) => {
   const currentDate = new Date();
   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
@@ -1044,6 +1043,7 @@ const medicineadd = async (request, response) => {
 };
 
 ////////////////////invoice/////////////////
+//////for normal type salesorder////////////////////////
 const createinvoice = async (request, response) => {
   try {
     const { sales_id, sold_by, description } = request.body;
@@ -1076,6 +1076,57 @@ const createinvoice = async (request, response) => {
   }
 };
 
+///////////for prescription salesorder/////////////////
+
+const prescriptioninvoice = async (request, response) => {
+  try {
+    const { sales_id, sold_by, medication_details, products } = request.body;
+    if (!sales_id || !medication_details || !sold_by) {
+      return response.status(400).json({ error: "All fields are required" });
+    }
+    // const invoice_no=
+    for (let product of products) {
+      const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
+
+      await prisma.sales_list.create({
+        data: {
+          sales_id: sales_id,
+        },
+        generic_prodid: {
+          connect: {
+            id: product.product_id,
+          },
+        },
+        order_qty: parseInt(product.quantity),
+        net_amount: net_amount,
+        created_date: istDate,
+      });
+    }
+    const create = await prisma.sales_invoice.create({
+      data: {
+        sales_id,
+        sold_by,
+        invoice_no,
+        medication_details,
+        created_date: istDate,
+      },
+    });
+    if (create) {
+      return response.status(200).json({
+        message: "Successfully created",
+        success: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in prescriptioninvoice API`
+    );
+    response.status(500).json("An error occurred");
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 const getainvoice = async (request, response) => {
   try {
     const { id } = request.body;
@@ -1100,6 +1151,51 @@ const getainvoice = async (request, response) => {
       `Internal server error: ${error.message} in pharmacy-getainvoice API`
     );
     response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const myorders = async (request, response) => {
+  try {
+    const user_id = request.user.userId;
+    const usertype = request.user.userType;
+
+    if (!user_id) {
+      return response.status(400).json({
+        error: true,
+        message: "user_id is required",
+      });
+    }
+    if (!usertype || usertype != "customer") {
+      return response.status(400).json({
+        error: true,
+        message: "Please login as a customer",
+      });
+    }
+    const salesorders = await prisma.sales_order.findMany({
+      where: {
+        customer_id: user_id,
+      },
+      orderBy: {
+        created_date: "desc",
+      },
+    });
+    if (salesorders.length > 0) {
+      return response.status(200).json({
+        success: true,
+        error: false,
+        data: salesorders,
+      });
+    } else {
+      return response.status(400).json({
+        error: true,
+        message: "No Data",
+      });
+    }
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in myorders API`);
+    response.status(500).json("An error occurred");
   } finally {
     await prisma.$disconnect();
   }
@@ -1190,5 +1286,7 @@ module.exports = {
   disableproduct,
   medicineadd,
   createinvoice,
-  getainvoice
+  getainvoice,
+  prescriptioninvoice,
+  myorders,
 };

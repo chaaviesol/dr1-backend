@@ -13,6 +13,7 @@ const {
   editremarks,
   getcusquery,
   querycomplete,
+  getcussecondopinion,
 } = require("./secondopinion.controller");
 
 const { upload } = require("../../middleware/Uploadimage");
@@ -25,6 +26,7 @@ OpinionRouter.post("/getareport", getareport);
 OpinionRouter.post("/statusupdate", statusupdate);
 OpinionRouter.post("/addquery", auth, addquery);
 OpinionRouter.get("/getcusquery", auth, getcusquery);
+OpinionRouter.get("/getcussecondop", auth, getcussecondopinion);
 /////////////for superadmin///////////
 OpinionRouter.get("/getallqueries", getallqueries);
 OpinionRouter.post("/getaquery", getaquery);
