@@ -513,7 +513,7 @@ const userLogin = async (request, response) => {
   const currentDate = new Date();
   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
   const istDate = new Date(currentDate.getTime() + istOffset);
- 
+
   if (!email || !password) {
     return response.status(401).json({
       error: true,
@@ -1080,18 +1080,15 @@ const UserforgotPwd = async (request, response) => {
       },
     });
     for (const u of user) {
-      console.log("heyy");
       const decryptedEmail = decrypt(u.email, secretKey);
       const decryptedname = decrypt(u.name, secretKey);
-      console.log({ decryptedEmail });
+
       if (decryptedEmail === email) {
-        console.log("hoiiiiiiiaaaaa");
         user = u;
         user.email = decryptedEmail;
         user.name = decryptedname;
       }
     }
-    console.log({ user });
 
     if (!user) {
       return response
@@ -1122,11 +1119,7 @@ const UserforgotPwd = async (request, response) => {
 };
 
 const forgotPwd = async (request, response) => {
-  console.log("hyyyyyyyyymain", request.body);
   const { email } = request.body;
-
-  console.log({ email });
-
   try {
     if (!email) {
       return response
@@ -1152,7 +1145,6 @@ const forgotPwd = async (request, response) => {
     }
 
     if (!user) {
-      console.log("object");
       return response
         .status(404)
         .json({ error: true, message: "User not found" });
@@ -1285,8 +1277,6 @@ const resetpassword = async (request, response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 5);
-
-    // Update the password for the found user
     let updatedUser;
     if (doctor) {
       updatedUser = await prisma.doctor_details.update({
@@ -1471,7 +1461,7 @@ const userresetpassword = async (request, response) => {
     }
 
     let user = null; // Initialize user as null
-    const users = await prisma.user_details.findMany(); // Fetch all users
+    const users = await prisma.user_details.findMany();
 
     for (const u of users) {
       const decryptedEmail = decrypt(u.email, secretKey);
@@ -1479,10 +1469,10 @@ const userresetpassword = async (request, response) => {
       console.log({ decryptedEmail });
 
       if (decryptedEmail === email) {
-        user = u; // Assign the matched user
+        user = u;
         user.email = decryptedEmail;
         user.name = decryptedName;
-        break; // Exit loop once user is found
+        break;
       }
     }
 
@@ -1490,7 +1480,7 @@ const userresetpassword = async (request, response) => {
       const hashedPassword = await bcrypt.hash(password, 5);
       const updatedUser = await prisma.user_details.update({
         where: {
-          id: user.id, // Use the correct table and user ID
+          id: user.id,
         },
         data: { password: hashedPassword },
       });
@@ -1589,7 +1579,6 @@ const viewchatdetails = async (request, response) => {
 };
 
 const consultcount = async (request, response) => {
-  console.log("consultcountttt", request.user.userId);
   const currentDate = new Date();
   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
   const istDate = new Date(currentDate.getTime() + istOffset);
@@ -1630,6 +1619,7 @@ const consultcount = async (request, response) => {
               hospital_id: id,
               consultcount: consultcount || 1,
               created_date: istDate,
+              st_modifiedDate: istDate,
               status: status,
             },
           });
@@ -1663,6 +1653,7 @@ const consultcount = async (request, response) => {
             hospital_id: id,
             consultcount: 1,
             created_date: istDate,
+            st_modifiedDate: istDate,
             status: status,
           },
         });
@@ -1698,6 +1689,7 @@ const consultcount = async (request, response) => {
               lab_id: id,
               consultcount: 1,
               created_date: istDate,
+              st_modifiedDate: istDate,
               status: status,
             },
           });
@@ -1731,6 +1723,7 @@ const consultcount = async (request, response) => {
             lab_id: id,
             consultcount: 1,
             created_date: istDate,
+            st_modifiedDate: istDate,
             status: status,
           },
         });
@@ -1767,6 +1760,7 @@ const consultcount = async (request, response) => {
               doctor_id: id,
               consultcount: 1,
               created_date: istDate,
+              st_modifiedDate: istDate,
               status: status,
             },
           });
@@ -1800,6 +1794,7 @@ const consultcount = async (request, response) => {
             doctor_id: id,
             consultcount: 1,
             created_date: istDate,
+            st_modifiedDate: istDate,
             status: status,
           },
         });
@@ -2420,7 +2415,6 @@ const monthlyCount = async (request, response) => {
 ///////////////intercated status========> "N"->no feedback,"P"-->Pending feedback , "L"==>"Maybe later" and "Y"==>"Feedback provided"
 ///for feedback afterrr 72hours
 
-
 const Doctorafterconsult = async (request, response) => {
   console.log("docafterconsulttttt");
   const currentDate = new Date();
@@ -2461,7 +2455,7 @@ const Doctorafterconsult = async (request, response) => {
         status: true,
       },
     });
-    console.log("docccccccccc", interactions);
+
     if (interactions.length === 0) {
       return response.status(404).json({
         error: true,
@@ -2505,17 +2499,15 @@ const Doctorafterconsult = async (request, response) => {
             lastInteractionId: interaction.id,
           });
 
-          // Add the doctor ID to the Set to avoid duplicates
           uniqueDoctors.add(interaction.doctorid?.id);
         }
       }
     }
 
-    console.log({ interactionDetails });
-
     return response.status(200).json({
       success: true,
       interactions: interactionDetails,
+      // interactionsfirr:interactions,
       message: "Found consultations greater than 72 hours ago",
     });
   } catch (error) {
@@ -2764,7 +2756,7 @@ const afterconsultupdate = async (request, response) => {
           user_id: user_id,
         },
       });
-      // console.log({ find });
+
       const startOfDay = new Date(find.created_date);
       startOfDay.setHours(0, 0, 0, 0);
 
@@ -2774,6 +2766,7 @@ const afterconsultupdate = async (request, response) => {
         where: {
           doctor_id: find?.doctor_id,
           user_id: user_id,
+          consultcount: 1,
           created_date: {
             gte: startOfDay,
             lte: endOfDay,
@@ -2818,6 +2811,7 @@ const afterconsultupdate = async (request, response) => {
         where: {
           lab_id: find?.lab_id,
           user_id: user_id,
+          consultcount: 1,
           created_date: {
             gte: startOfDay,
             lte: endOfDay,
@@ -2852,6 +2846,7 @@ const afterconsultupdate = async (request, response) => {
         where: {
           hospital_id: find?.hospital_id,
           user_id: user_id,
+          consultcount: 1,
           created_date: {
             gte: startOfDay,
             lte: endOfDay,

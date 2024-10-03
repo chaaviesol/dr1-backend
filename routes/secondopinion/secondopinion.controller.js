@@ -37,8 +37,8 @@ const logger = winston.createLogger({
 });
 
 const addreport = async (request, response) => {
-  console.log("Request Body:", request.body); // Logs form data fields
-  // console.log("Request Files:", request.files);
+  console.log("Request Body:", request.body);
+ 
   try {
     const currentDate = new Date();
     const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
@@ -55,7 +55,6 @@ const addreport = async (request, response) => {
         .json({ message: "Missing required fields", error: true });
     }
 
-    // Ensure contact_no is valid (e.g., proper format, length)
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(contact_no)) {
       return response
@@ -88,7 +87,7 @@ const addreport = async (request, response) => {
 
     const create = await prisma.second_opinion_data.create({
       data: {
-        report_image: JSON.stringify(imagerep),
+        report_image: imagerep,
         patient_name,
         doctor_name,
         department,
@@ -96,13 +95,13 @@ const addreport = async (request, response) => {
         remarks,
         user_id,
         created_date: istDate,
-        status: "requested",
+        status: "submitted",
       },
     });
     console.log({ create });
     if (create) {
       response.status(200).json({
-        message: "Report created successfully",
+        message: "Report submitted successfully",
         error: false,
       });
     }
@@ -130,9 +129,9 @@ const getallreport = async (request, response) => {
       let completedcount = [];
       let otherscount = [];
       allrequested.forEach((item) => {
-        if (item.status === "requested") {
+        if (item.status === "requested" || item.status === "submitted") {
           requestcount.push(item);
-        } else if (item.status === "completed") {
+        } else if (item.status === "completed" || item.status === "responded") {
           completedcount.push(item);
         } else {
           otherscount.push(item);

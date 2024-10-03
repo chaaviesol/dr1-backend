@@ -1198,7 +1198,6 @@ const get_searchdata = async (req, res) => {
 //a single doctor feedback
 
 const getadoctorfeedback = async (req, res) => {
-  console.log("getdocfeedbackkkkkkkk");
   const doctor_id = req.body.doctor_id;
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
