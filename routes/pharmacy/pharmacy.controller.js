@@ -664,16 +664,13 @@ const salesorder = async (request, response) => {
 
         console.log("heyyy");
 
-        await prisma.prescription_data.create({
+        await prisma.sales_order.update({
+          where: {
+            sales_id: sales_order.sales_id,
+          },
           data: {
-            sales_order: {
-              connect: {
-                sales_id: sales_order.sales_id,
-              },
-            },
             patient_name: name,
-            // sales_id: sales_order.sales_id,
-            prescription_image: JSON.stringify(imageprescription),
+            prescription_image: imageprescription,
             created_date: istDate,
           },
         });
@@ -725,7 +722,8 @@ const getasalesorder = async (request, response) => {
         created_date: true,
         delivery_address: true,
         pincode: true,
-
+        prescription_image: true,
+        patient_name: true,
         sales_list: {
           select: {
             id: true,
@@ -743,7 +741,6 @@ const getasalesorder = async (request, response) => {
             },
           },
         },
-        prescription_data: true,
       },
     });
     const decryptedUsername = decrypt(getdata?.users.name, secretKey);
@@ -768,9 +765,10 @@ const presciptionsaleorders = async (request, response) => {
   try {
     const all = await prisma.sales_order.findMany({
       where: {
-        prescription_data: {
-          some: {},
-        },
+        order_type: "prescription",
+        // prescription_data: {
+        //   some: {},
+        // },
       },
       select: {
         sales_id: true,
@@ -787,7 +785,8 @@ const presciptionsaleorders = async (request, response) => {
             name: true,
           },
         },
-        prescription_data: true,
+        prescription_image: true,
+        patient_name: true,
       },
       orderBy: {
         created_date: "desc",
@@ -843,9 +842,7 @@ const allsalelistorders = async (request, response) => {
   try {
     const all = await prisma.sales_order.findMany({
       where: {
-        sales_list: {
-          some: {},
-        },
+        order_type: "salesorder",
       },
       select: {
         sales_id: true,
@@ -872,7 +869,6 @@ const allsalelistorders = async (request, response) => {
               select: {
                 name: true,
                 category: true,
-                subcategory: true,
                 mrp: true,
                 description: true,
               },
@@ -1080,43 +1076,71 @@ const createinvoice = async (request, response) => {
 
 const prescriptioninvoice = async (request, response) => {
   try {
-    const { sales_id, sold_by, medication_details, products } = request.body;
+    const {
+      sales_id,
+      sold_by,
+      medication_details,
+      products,
+      so_status,
+      total_amount,
+    } = request.body;
+
     if (!sales_id || !medication_details || !sold_by) {
       return response.status(400).json({ error: "All fields are required" });
     }
-    // const invoice_no=
-    for (let product of products) {
-      const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
 
-      await prisma.sales_list.create({
+    let total_amount_fixed;
+    if (total_amount) {
+      total_amount_fixed = parseFloat(total_amount).toFixed(2);
+    }
+
+    await prisma.$transaction(async (prisma) => {
+      const updatesales_order = await prisma.sales_order.update({
+        where: {
+          sales_id,
+        },
         data: {
-          sales_id: sales_id,
+          total_amount: total_amount_fixed,
+          so_status: so_status,
+          updated_date: istDate,
         },
-        generic_prodid: {
-          connect: {
-            id: product.product_id,
+      });
+
+      for (let product of products) {
+        const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
+
+        await prisma.sales_list.create({
+          data: {
+            sales_id: sales_id,
+            generic_prodid: {
+              connect: {
+                id: product.product_id,
+              },
+            },
+            order_qty: parseInt(product.quantity),
+            net_amount: net_amount,
+            created_date: istDate,
           },
+        });
+      }
+
+      const create = await prisma.sales_invoice.create({
+        data: {
+          sales_id,
+          sold_by,
+          invoice_no, // Ensure you define `invoice_no` somewhere
+          medication_details,
+          created_date: istDate,
         },
-        order_qty: parseInt(product.quantity),
-        net_amount: net_amount,
-        created_date: istDate,
       });
-    }
-    const create = await prisma.sales_invoice.create({
-      data: {
-        sales_id,
-        sold_by,
-        invoice_no,
-        medication_details,
-        created_date: istDate,
-      },
+
+      if (create) {
+        return response.status(200).json({
+          message: "Successfully created",
+          success: true,
+        });
+      }
     });
-    if (create) {
-      return response.status(200).json({
-        message: "Successfully created",
-        success: true,
-      });
-    }
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in prescriptioninvoice API`
@@ -1126,6 +1150,7 @@ const prescriptioninvoice = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+
 
 const getainvoice = async (request, response) => {
   try {
