@@ -1060,6 +1060,62 @@ const UserforgotPwd = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
 
   try {
+    async function sendOTPByEmail(username, userEmail, otp) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: "smtp.zoho.in",
+          port: 465,
+          auth: {
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASSWORD,
+          },
+          secure: true,
+          tls: { rejectUnauthorized: false },
+        });
+    
+        const handlebarOptions = {
+          viewEngine: {
+            partialsDir: path.resolve(__dirname, "../../views"),
+            defaultLayout: false,
+          },
+          viewPath: path.resolve(__dirname, "../../views"),
+        };
+    
+        transporter.use("compile", hbs(handlebarOptions));
+    
+        const mailOptions = {
+          from: "support@chaavie.com",
+          to: userEmail,
+          subject: "OTP Mail",
+          template: "user_temp_otp",
+          context: {
+            username: username,
+            otp: otp,
+          },
+        };
+    
+        await transporter.sendMail(mailOptions);
+      } catch (error) {
+        console.error("Error sending OTP email:", error);
+        throw error;
+      }
+    }
+    
+    function validateEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+    
+    function generateOTP() {
+      const characters = "0123456789";
+      let otp = "";
+      for (let i = 0; i < 5; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        otp += characters.charAt(randomIndex);
+      }
+      console.log({otp})
+      return otp;
+    }
     if (!email) {
       return response
         .status(400)
@@ -1121,6 +1177,62 @@ const UserforgotPwd = async (request, response) => {
 const forgotPwd = async (request, response) => {
   const { email } = request.body;
   try {
+    async function sendOTPByEmail(username, userEmail, otp) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: "smtp.zoho.in",
+          port: 465,
+          auth: {
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASSWORD,
+          },
+          secure: true,
+          tls: { rejectUnauthorized: false },
+        });
+    
+        const handlebarOptions = {
+          viewEngine: {
+            partialsDir: path.resolve(__dirname, "../../views"),
+            defaultLayout: false,
+          },
+          viewPath: path.resolve(__dirname, "../../views"),
+        };
+    
+        transporter.use("compile", hbs(handlebarOptions));
+    
+        const mailOptions = {
+          from: "support@chaavie.com",
+          to: userEmail,
+          subject: "OTP Mail",
+          template: "user_temp_otp",
+          context: {
+            username: username,
+            otp: otp,
+          },
+        };
+    
+        await transporter.sendMail(mailOptions);
+      } catch (error) {
+        console.error("Error sending OTP email:", error);
+        throw error;
+      }
+    }
+    
+    function validateEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+    
+    function generateOTP() {
+      const characters = "0123456789";
+      let otp = "";
+      for (let i = 0; i < 5; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        otp += characters.charAt(randomIndex);
+      }
+      console.log({otp})
+      return otp;
+    }
     if (!email) {
       return response
         .status(400)
@@ -1170,62 +1282,7 @@ const forgotPwd = async (request, response) => {
   }
 };
 
-async function sendOTPByEmail(username, userEmail, otp) {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.zoho.in",
-      port: 465,
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      secure: true,
-      tls: { rejectUnauthorized: false },
-    });
 
-    const handlebarOptions = {
-      viewEngine: {
-        partialsDir: path.resolve(__dirname, "../../views"),
-        defaultLayout: false,
-      },
-      viewPath: path.resolve(__dirname, "../../views"),
-    };
-
-    transporter.use("compile", hbs(handlebarOptions));
-
-    const mailOptions = {
-      from: "support@chaavie.com",
-      to: userEmail,
-      subject: "OTP Mail",
-      template: "user_temp_otp",
-      context: {
-        username: username,
-        otp: otp,
-      },
-    };
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error("Error sending OTP email:", error);
-    throw error;
-  }
-}
-
-function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-function generateOTP() {
-  const characters = "0123456789";
-  let otp = "";
-  for (let i = 0; i < 5; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    otp += characters.charAt(randomIndex);
-  }
-  console.log({otp})
-  return otp;
-}
 ////////////////////////////////////////////////////////
 
 const resetpassword = async (request, response) => {
