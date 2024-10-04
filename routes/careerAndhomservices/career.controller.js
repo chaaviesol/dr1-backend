@@ -108,6 +108,8 @@ const getcareerrequest = async (request, response) => {
   }
 };
 
+
+
 const homeserviceupload = async (request, response) => {
   const currentDate = new Date();
   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
@@ -167,6 +169,8 @@ const homeserviceupload = async (request, response) => {
         preferred_location,
         qualification,
         experience,
+        start_date,
+        end_date,
         type,
         status,
         department,
