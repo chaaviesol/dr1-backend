@@ -1223,6 +1223,7 @@ function generateOTP() {
     const randomIndex = Math.floor(Math.random() * characters.length);
     otp += characters.charAt(randomIndex);
   }
+  console.log({otp})
   return otp;
 }
 ////////////////////////////////////////////////////////
