@@ -129,9 +129,9 @@ const addlab = async (req, response) => {
 
         labImage[keyName] = lab_imageLink[i].location;
       }
-    
+
       const emaillower = email.toLowerCase();
-      console.log({emaillower})
+      console.log({ emaillower });
       // const lab = await prisma.lab_details.findMany({
       //   where: {
       //     OR: [{ email: email }, { phone_no: contact_no },{ license_no: lisence_no}],
@@ -343,46 +343,62 @@ const getlab = async (request, response) => {
 };
 
 //details of a lab
+
 const getlabdetails = async (request, response) => {
   try {
-    const id = request.body.id;
-    console.log({ id });
-    if (id) {
-      const find = await prisma.lab_details.findUnique({
-        where: {
-          id: id,
-        },
+    const { id } = request.body;
+
+    if (!id) {
+      return response.status(400).json({
+        success: false,
+        message: "Lab ID is required",
+        error: true,
+      });
+    }
+
+    const find = await prisma.lab_details.findUnique({
+      where: { id: id },
+    });
+
+    if (!find) {
+      return response.status(404).json({
+        success: false,
+        message: "Lab not found",
+        error: true,
+      });
+    }
+    if (find.status !== "Y") {
+      return response.status(404).json({
+        success: false,
+        message:
+          "Approval is pending for your account. Thank you for your patience.",
+        error: true,
+      });
+    }
+
+    let district = null;
+
+    if (find.pincode) {
+      const place = await prisma.pincode_data.findFirst({
+        where: { pincode: parseInt(find.pincode, 10) },
       });
 
-      if (find) {
-        const place=await prisma.pincode_data.findFirst({
-          where:{
-            pincode:parseInt(find?.pincode)
-          }
-        })
-      
-        let district=place?.district
-        const result = {
-          ...find,
-          district: district, 
-        };
-        
-        return response.status(200).json({
-          success: true,
-          data: result,
-          error: false,
-        });
-      } else {
-        return response.status(400).json({
-          success: false,
-          message: "Lab not found",
-          error: true,
-        });
-      }
+      district = place ? place.district : null; // Handle case where pincode is not found
     }
+
+    const result = {
+      ...find,
+      district: district,
+    };
+
+    return response.status(200).json({
+      success: true,
+      data: result,
+      error: false,
+    });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in getlabdetails api`
+      `Internal server error: ${error.message} in getLabDetails API`
     );
     return response.status(500).json({
       error: true,
@@ -395,8 +411,8 @@ const getlabdetails = async (request, response) => {
 };
 
 const editlab = async (request, response) => {
-  const id=request.user.userId
-  console.log(request.body)
+  const id = request.user.userId;
+  console.log(request.body);
   try {
     const { name, timing, about, featured_partner, services, features } =
       request.body;

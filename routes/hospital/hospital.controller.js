@@ -4,7 +4,6 @@ const bcrypt = require("bcrypt");
 const winston = require("winston");
 const fs = require("fs");
 const { encrypt, decrypt } = require("../../utils");
-const { error } = require("console");
 require("dotenv").config();
 const currentDate = new Date();
 const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
@@ -120,7 +119,7 @@ const hospital_registration = async (req, res) => {
         datetime: date,
         password: hashedpassword,
         email: emaillower,
-        focusarea:focusarea,
+        focusarea: focusarea,
         about: about,
         type: type,
         pincode: parseInt(pincode),
@@ -234,14 +233,12 @@ const hospital_login = async (req, res) => {
 
 const get_hospital = async (req, res) => {
   const secretKey = process.env.ENCRYPTION_KEY;
-  console.log("gethospitallll");
 
   // Helper function to handle decryption with fallback
   const safeDecrypt = (text, key) => {
     try {
       return decrypt(text, key);
     } catch (err) {
-      // console.error(`Decryption failed for text: ${text}. Error: ${err.message}`);
       return text; // Return the original text if decryption fails
     }
   };
@@ -279,7 +276,6 @@ const get_hospital = async (req, res) => {
     });
   } catch (err) {
     logger.error(`Internal server error: ${err.message} in get_hospital api`);
-    console.log(err);
     res.status(400).json({
       error: true,
       success: false,
@@ -346,13 +342,13 @@ const editbyadmin = async (req, res) => {
         fearture: feature,
         photo: photo,
         speciality: speciality,
-        focusarea:focusarea,
+        focusarea: focusarea,
         contact_no: contact_no,
         onlinebooking: onlinebooking,
         updatedDate: istDate,
       },
     });
-    console.log("edited_details----", edited_details);
+
     res.status(200).json({
       error: false,
       success: true,
@@ -497,7 +493,7 @@ const completeedit = async (req, res) => {
       type: checkChanges("type", type),
       email: checkChanges("email", email),
       updatedDate: istDate,
-      focusarea:checkChanges("focusarea",focusarea)
+      focusarea: checkChanges("focusarea", focusarea),
     };
 
     // Remove unchanged fields from updateData
@@ -539,7 +535,7 @@ const completeedit = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in hospital completeedit API`
     );
-    console.error(error);
+
     return res.status(500).json({
       error: true,
       message: "Internal Server Error",
@@ -578,7 +574,6 @@ const delete_hospital = async (req, res) => {
 
 //adding doctor by hospital
 const add_doctor = async (req, res) => {
-  console.log("adddrrrrrr");
   try {
     const docImageLink = req?.file?.location;
     const secretKey = process.env.ENCRYPTION_KEY;
@@ -586,7 +581,6 @@ const add_doctor = async (req, res) => {
       try {
         return decrypt(text, key);
       } catch (err) {
-        // console.error(`Decryption failed for text: ${text}. Error: ${err.message}`);
         return text;
       }
     };
@@ -659,18 +653,17 @@ const add_doctor = async (req, res) => {
 
     for (const doctor of doctors) {
       // const decryptedEmail = safeDecrypt(doctor.email, secretKey);
-      // console.log("Decrypted email:", decryptedEmail);
+
       const decryptedPhone = safeDecrypt(doctor.phone_no, secretKey);
       const decryptedregistration_no = safeDecrypt(
         doctor.registration_no,
         secretKey
       );
-      // console.log("Decrypted phone:", decryptedPhone);
+
       if (
         decryptedPhone === phone_no ||
         decryptedregistration_no == registration_no
       ) {
-        console.log("heyyjusttttt");
         return res.status(400).json({
           error: true,
           message: "Phone number or register number already exists",
@@ -704,9 +697,9 @@ const add_doctor = async (req, res) => {
         status: "P",
       },
     });
-    console.log("added_doctorData----", added_doctorData);
+
     const doctor_id = added_doctorData.id;
-    // console.log(JSON.stringify(req.body.days));
+
     // const days = [
     //   {
     //     id: 1,
@@ -815,7 +808,6 @@ const add_doctor = async (req, res) => {
 
 //adding the timing of the doctors by hospital
 const consultation_data = async (req, res) => {
-  console.log("consssssss");
   try {
     const { doctor_id, days, hospital_id } = req.body;
     const date = new Date();
@@ -841,7 +833,6 @@ const consultation_data = async (req, res) => {
       });
     }
 
-    console.log(JSON.stringify(req.body.days));
     const isAnyAvailableTimesExist = days.some(
       (ele) => ele.availableTimes[0].startTime && ele.availableTimes[0].endTime
     );
@@ -861,7 +852,6 @@ const consultation_data = async (req, res) => {
         data: data,
       });
 
-      console.log({ add_consultingDay });
       res.status(200).json({
         error: false,
         success: true,
@@ -917,9 +907,8 @@ const filter_byName = async (req, res) => {
 
 //hospital filter using the various parameter
 const hospital_filter = async (req, res) => {
-  console.log("object");
   try {
-    const { medical_field, speciality, feature ,focusarea} = req.body;
+    const { medical_field, speciality, feature, focusarea } = req.body;
     let hospitalFilter;
 
     if (medical_field && speciality && feature && focusarea) {
@@ -944,8 +933,8 @@ const hospital_filter = async (req, res) => {
       if (feature) {
         hospitalfilterData.feature = feature;
       }
-      if(focusarea){
-        hospitalfilterData.focusarea=focusarea;
+      if (focusarea) {
+        hospitalfilterData.focusarea = focusarea;
       }
       hospitalFilter = await prisma.hospital_details.findMany({
         where: {
@@ -1018,7 +1007,6 @@ const getHospitalAddress = async (req, res) => {
 
 //for getting the hospital in the searched area
 const get_hospitalBypin = async (req, res) => {
-  console.log("api called=======================>>>>");
   try {
     const { selectedArea_id } = req.body;
 
@@ -1166,7 +1154,7 @@ const doctor_consultationList = async (req, res) => {
         // hospitalid:true
       },
     });
-    console.log({ get_consultationList });
+
     if (get_consultationList.length > 0) {
       const consultationListWithHospitals = await Promise.all(
         get_consultationList.map(async (item) => {
@@ -1210,7 +1198,7 @@ const doctor_consultationList = async (req, res) => {
           // };
         })
       );
-      console.log({ consultationListWithHospitals });
+
       if (consultationListWithHospitals) {
         return res.status(200).json({
           success: true,
@@ -1283,7 +1271,7 @@ const delete_availability = async (req, res) => {
         id: id,
       },
     });
-    console.log({ delete_details });
+
     res.status(200).json({
       error: false,
       success: true,
@@ -1363,6 +1351,14 @@ const get_hospitalDetails = async (req, res) => {
     });
 
     if (find) {
+      if (find.status !== "Y") {
+        return response.status(404).json({
+          success: false,
+          message:
+            "Approval is pending for your account. Thank you for your patience.",
+          error: true,
+        });
+      }
       // Decrypting sensitive data
       // const decryptedPhone = decrypt(find.phone_no, secretKey);
       // const decryptedEmail = decrypt(find.email, secretKey);
@@ -1387,7 +1383,6 @@ const get_hospitalDetails = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error:", error);
     res.status(400).json({
       error: true,
       success: false,
@@ -1541,7 +1536,6 @@ const get_searchdata = async (req, res) => {
 };
 
 const hospital_doctordetails = async (req, res) => {
-  console.log("heyyyyyyyyyyyyyyyyyyyyy");
   try {
     const { hospital_id, doctor_id } = req.body;
     if (!hospital_id || !doctor_id) {
@@ -1565,7 +1559,7 @@ const hospital_doctordetails = async (req, res) => {
         hospitalid: true,
       },
     });
-    console.log({ find });
+
     if (find) {
       return res.status(200).json({
         success: true,
@@ -1634,7 +1628,7 @@ const getahospitalfeedback = async (req, res) => {
         },
       };
     });
-    console.log({ datas });
+
     // Calculate the sum and average of the ratings
     const totalRatings = datas.reduce(
       (sum, feedback) => sum + feedback.rating,
@@ -1656,7 +1650,7 @@ const getahospitalfeedback = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in getahospitalfeedback API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1683,7 +1677,7 @@ const feedbackapproval = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in hospital feedbackapproval API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1751,7 +1745,7 @@ const hospital_disable = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in hospital_disable API`
     );
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1783,7 +1777,7 @@ const getunapprovehsptl = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in getunapprovehsptl API`
     );
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1827,7 +1821,7 @@ const approvehospital = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in approvehospital API`
     );
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1843,7 +1837,7 @@ const hospital_doctors = async (request, response) => {
         error: true,
       });
     }
-    console.log({ hospitalid });
+
     const datas = await prisma.doctor_hospital.findMany({
       where: {
         hospital_id: hospitalid,
@@ -1879,7 +1873,7 @@ const hospital_doctors = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in hospital-hospital_doctors API`
     );
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();

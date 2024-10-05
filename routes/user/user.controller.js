@@ -629,7 +629,7 @@ const userLogin = async (request, response) => {
       return response.status(200).json({
         success: true,
         error: false,
-        message: "Login successful----testinggggggggg",//message: "Login successful
+        message: "Login successful----testinggggggggg", //message: "Login successful
         refreshToken,
         accessToken,
         userId: logged_id,
@@ -925,6 +925,7 @@ const login = async (request, response) => {
           type: "doctor",
           id: doctor.id,
           databasetype: "doctor",
+          status: doctor.status,
         };
       }
 
@@ -937,6 +938,7 @@ const login = async (request, response) => {
           type: "hospital",
           id: hospital.id,
           databasetype: "hospital",
+          status: hospital.status,
         };
       }
 
@@ -949,6 +951,7 @@ const login = async (request, response) => {
           type: "lab", //changed from laboratory
           id: lab.id,
           databasetype: "lab",
+          status: lab.status,
         };
       }
 
@@ -956,13 +959,21 @@ const login = async (request, response) => {
     };
 
     const result = await findUserByEmail(emaillower);
-    const { user, type, id, databasetype } = result;
+    const { user, type, id, databasetype, status } = result;
 
     if (!user) {
       return response.status(401).json({
         error: true,
         success: false,
         message: "Incorrect Email!",
+      });
+    }
+    if (status !== "Y") {
+      return response.status(401).json({
+        error: true,
+        success: false,
+        message:
+          "Approval is pending for your account. Thank you for your patience.",
       });
     }
 
@@ -1072,7 +1083,7 @@ const UserforgotPwd = async (request, response) => {
           secure: true,
           tls: { rejectUnauthorized: false },
         });
-    
+
         const handlebarOptions = {
           viewEngine: {
             partialsDir: path.resolve(__dirname, "../../views"),
@@ -1080,9 +1091,9 @@ const UserforgotPwd = async (request, response) => {
           },
           viewPath: path.resolve(__dirname, "../../views"),
         };
-    
+
         transporter.use("compile", hbs(handlebarOptions));
-    
+
         const mailOptions = {
           from: "support@chaavie.com",
           to: userEmail,
@@ -1093,19 +1104,19 @@ const UserforgotPwd = async (request, response) => {
             otp: otp,
           },
         };
-    
+
         await transporter.sendMail(mailOptions);
       } catch (error) {
         console.error("Error sending OTP email:", error);
         throw error;
       }
     }
-    
+
     function validateEmail(email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(email);
     }
-    
+
     function generateOTP() {
       const characters = "0123456789";
       let otp = "";
@@ -1113,7 +1124,7 @@ const UserforgotPwd = async (request, response) => {
         const randomIndex = Math.floor(Math.random() * characters.length);
         otp += characters.charAt(randomIndex);
       }
-      console.log({otp})
+      console.log({ otp });
       return otp;
     }
     if (!email) {
@@ -1189,7 +1200,7 @@ const forgotPwd = async (request, response) => {
           secure: true,
           tls: { rejectUnauthorized: false },
         });
-    
+
         const handlebarOptions = {
           viewEngine: {
             partialsDir: path.resolve(__dirname, "../../views"),
@@ -1197,9 +1208,9 @@ const forgotPwd = async (request, response) => {
           },
           viewPath: path.resolve(__dirname, "../../views"),
         };
-    
+
         transporter.use("compile", hbs(handlebarOptions));
-    
+
         const mailOptions = {
           from: "support@chaavie.com",
           to: userEmail,
@@ -1210,19 +1221,19 @@ const forgotPwd = async (request, response) => {
             otp: otp,
           },
         };
-    
+
         await transporter.sendMail(mailOptions);
       } catch (error) {
         console.error("Error sending OTP email:", error);
         throw error;
       }
     }
-    
+
     function validateEmail(email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       return emailRegex.test(email);
     }
-    
+
     function generateOTP() {
       const characters = "0123456789";
       let otp = "";
@@ -1230,7 +1241,7 @@ const forgotPwd = async (request, response) => {
         const randomIndex = Math.floor(Math.random() * characters.length);
         otp += characters.charAt(randomIndex);
       }
-      console.log({otp})
+      console.log({ otp });
       return otp;
     }
     if (!email) {
@@ -1281,7 +1292,6 @@ const forgotPwd = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
 
 ////////////////////////////////////////////////////////
 

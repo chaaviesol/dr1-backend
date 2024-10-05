@@ -10,7 +10,6 @@ const istDate = new Date(currentDate.getTime() + istOffset);
 
 const winston = require("winston");
 const fs = require("fs");
-const { error } = require("console");
 const logDirectory = "./logs";
 if (!fs.existsSync(logDirectory)) {
   fs.mkdirSync(logDirectory);
@@ -33,7 +32,6 @@ const logger = winston.createLogger({
 });
 
 const doctor_registration = async (req, res) => {
-  console.log("dcttttreggg");
   const {
     name,
     second_name,
@@ -75,7 +73,6 @@ const doctor_registration = async (req, res) => {
 
     //         doctorImage[keyName] = dr_imageLink[i].location
     //      }
-    //      console.log({doctorImage})
 
     //for encrypting the phone,email and registration_no
     // const encryptData = (data) => {
@@ -124,9 +121,7 @@ const doctor_registration = async (req, res) => {
 
     const mobileNumber = phone;
     if (validateMobileNumber(mobileNumber)) {
-      console.log("Valid mobile number");
     } else {
-      console.log("Invalid mobile number");
       const resptext = "Invalid mobile number";
       return res.send(resptext);
     }
@@ -137,9 +132,7 @@ const doctor_registration = async (req, res) => {
     }
     const email_id = email;
     if (validateEmail(email_id)) {
-      console.log("Valid email address");
     } else {
-      console.log("Invalid email address");
       const resptext = "Invalid email address";
       return res.send(resptext);
     }
@@ -193,7 +186,6 @@ const doctor_registration = async (req, res) => {
       //     OR: [{ email: decryptedEmail }, { phone_no: decryptedPhone }],
       //   },
       // });
-      // console.log("User:", user);
     }
 
     const capitalised_name = capitalizeFirstLetter(name);
@@ -251,7 +243,7 @@ const doctor_registration = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in doctor_registration API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -330,7 +322,7 @@ const doctor_login = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in doctor_login API`);
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -338,51 +330,6 @@ const doctor_login = async (req, res) => {
 };
 
 //getting all active doctors
-
-// const get_doctors = async (req, res) => {
-//   const secretKey = process.env.ENCRYPTION_KEY;
-//   // Helper function to handle decryption with fallback
-//   const safeDecrypt = (text, key) => {
-//     try {
-//       return decrypt(text, key);
-//     } catch (err) {
-//       // console.error(`Decryption failed for text: ${text}. Error: ${err.message}`);
-//       return text;
-//     }
-//   };
-//   try {
-//     const complete_data = await prisma.doctor_details.findMany({
-//       where: { OR: [{ status: "Y" }, { status: null }] },
-//       orderBy: {
-//         // datetime: "desc",
-//         name: "asc",
-//       },
-//     });
-
-//     const decrypted_data = complete_data.map((doctor) => {
-//       return {
-//         ...doctor,
-//         // email: safeDecrypt(doctor.email, secretKey),
-//         phone_no: safeDecrypt(doctor.phone_no, secretKey),
-//         registration_no: safeDecrypt(doctor.registration_no, secretKey),
-
-//       };
-//     });
-
-//     res.status(200).json({
-//       error: false,
-//       success: true,
-//       message: "successful",
-//       data: decrypted_data,
-//     });
-//   } catch (error) {
-//     logger.error(`Internal server error: ${error.message} in get_doctors API`);
-//     console.error(error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
 
 const get_doctors = async (req, res) => {
   const secretKey = process.env.ENCRYPTION_KEY;
@@ -473,7 +420,7 @@ const get_doctors = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in get_doctors API`);
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -488,7 +435,6 @@ const get_doctorDetails = async (req, res) => {
   try {
     const { id } = req.body;
     if (!id) {
-      console.log("no id");
       return res.status(404).json({
         message: "required field can't be null",
         error: true,
@@ -501,6 +447,14 @@ const get_doctorDetails = async (req, res) => {
     });
 
     if (find) {
+      if (find.status !== "Y") {
+        return response.status(404).json({
+          success: false,
+          message:
+            "Approval is pending for your account. Thank you for your patience.",
+          error: true,
+        });
+      }
       // Decrypting sensitive data
       const decryptedPhone = decrypt(find.phone_no, secretKey);
       // const decryptedEmail = decrypt(find.email, secretKey);
@@ -528,7 +482,7 @@ const get_doctorDetails = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in get_doctorDetails API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -565,7 +519,7 @@ const edit_doctor = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in edit_doctor API`);
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -584,7 +538,7 @@ const delete_doctor = async (req, res) => {
         status: "inactivated",
       },
     });
-    console.log("deleted_doctor------", deleted_doctor);
+
     res.status(200).json({
       error: false,
       success: true,
@@ -594,7 +548,7 @@ const delete_doctor = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in delete_doctor API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -626,7 +580,7 @@ const consultation_data = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in doctor consultation_data API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -648,7 +602,7 @@ const edit_consultationDetails = async (req, res) => {
         updated_date: istDate,
       },
     });
-    console.log("edited_consultation-----", edited_consultation);
+
     res.status(200).json({
       error: false,
       success: true,
@@ -659,7 +613,7 @@ const edit_consultationDetails = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in doctor-edit_consultationDetails API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -689,7 +643,7 @@ const filter_specialization = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in filter_specialization API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -738,7 +692,7 @@ const doctor_filter = async (req, res) => {
         ],
       },
     });
-    console.log("filter_doc-----", filter_doc);
+
     res.status(200).json({
       error: false,
       success: true,
@@ -749,7 +703,7 @@ const doctor_filter = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in doctor_filter API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -778,7 +732,7 @@ const doctor_nameFilter = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in doctor_nameFilter API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -789,7 +743,7 @@ const doctor_nameFilter = async (req, res) => {
 const suggest_postname_district = async (req, res) => {
   try {
     const { searchitem } = req.body;
-    console.log("searchitem-----", searchitem);
+
     const trimmedSearchItem = searchitem.trim();
     const suggest_item_postname = await prisma.pincode_data.findMany({
       where: {
@@ -799,7 +753,6 @@ const suggest_postname_district = async (req, res) => {
         },
       },
     });
-    // console.log("suggest_item_postname------", suggest_item_postname)
 
     const suggest_item_district = await prisma.pincode_data.findMany({
       where: {
@@ -809,7 +762,6 @@ const suggest_postname_district = async (req, res) => {
         },
       },
     });
-    // console.log("suggest_item_district------", suggest_item_district)
     const suggest_item = [...suggest_item_postname, ...suggest_item_district];
     res.status(200).json({
       error: false,
@@ -820,7 +772,7 @@ const suggest_postname_district = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in get_category API`);
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -829,7 +781,6 @@ const suggest_postname_district = async (req, res) => {
 
 //for getting pincode
 const get_pincode = async (req, res) => {
-  console.log("api called=======================>>>>");
   try {
     const { selectedArea_id } = req.body;
 
@@ -838,9 +789,8 @@ const get_pincode = async (req, res) => {
         id: selectedArea_id,
       },
     });
-    console.log("get_postalData-----", get_postalData);
+
     const result = get_postalData[0].pincode;
-    console.log("result---", result);
 
     const get_doctorDetails = await prisma.doctor_details.findMany({
       where: {
@@ -850,14 +800,12 @@ const get_pincode = async (req, res) => {
     let featured_partner = [];
     let not_featured_partner = [];
     if (get_doctorDetails.length > 0) {
-      console.log("get_doctorDetails-----", get_doctorDetails);
       for (i = 0; i < get_doctorDetails.length; i++) {
         if (get_doctorDetails[i].featured_partner === true) {
           featured_partner.push(get_doctorDetails[i]);
         } else {
           not_featured_partner.push(get_doctorDetails[i]);
         }
-        console.log("featured_partner---", featured_partner);
       }
       return res.status(200).json({
         error: false,
@@ -884,7 +832,7 @@ const get_pincode = async (req, res) => {
       // for(let i=result-4; i<=result+4; i++){
       //     suggestedpincodes.push(i)
       // }
-      console.log("suggestedpincodes----", suggestedpincodes);
+
       for (i = 0; i < suggestedpincodes.length; i++) {
         const nearBypincode = await prisma.doctor_details.findMany({
           where: {
@@ -910,9 +858,6 @@ const get_pincode = async (req, res) => {
         }
         //  ggg.push(samePinData)
 
-        console.log("nearBy_featured----", nearByData_featured);
-
-        console.log("nearByData---", nearByData);
         if (nearByData_featured.length > 0) {
           return res.status(200).json({
             error: false,
@@ -940,7 +885,7 @@ const get_pincode = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in get_pincode API`);
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -951,14 +896,13 @@ const get_pincode = async (req, res) => {
 const forgot_password = async (req, res) => {
   try {
     const { email } = req.body;
-    console.log("Fetching doctors from the database...");
+
     const doctors = await prisma.doctor_details.findMany();
-    console.log({ doctors });
+
     const secretKey = process.env.ENCRYPTION_KEY;
     for (const doctor of doctors) {
-      console.log("heyy");
       const decryptedEmail = decrypt(doctor.email, secretKey);
-      console.log({ decryptedEmail });
+
       if (decryptedEmail === email) {
         const generateOTP = () => {
           const otp = Math.floor(100000 + Math.random() * 900000);
@@ -966,7 +910,6 @@ const forgot_password = async (req, res) => {
         };
 
         const randomOTP = generateOTP();
-        console.log("randomOTP-----", randomOTP);
 
         const transporter = nodemailer.createTransport({
           host: "smtp.zoho.in",
@@ -986,7 +929,6 @@ const forgot_password = async (req, res) => {
 
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
-            console.error("Error sending email:", error);
             return res.status(400).json({
               error: true,
               success: false,
@@ -1013,7 +955,6 @@ const forgot_password = async (req, res) => {
       message: "Email not found",
     });
   } catch (err) {
-    console.log("error----", err);
     res.status(500).json({
       error: true,
       success: false,
@@ -1028,7 +969,6 @@ const reset_password = async (req, res) => {
   try {
     const { email, password } = req.body;
     const doctors = await prisma.doctor_details.findMany();
-    console.log({ doctors });
 
     for (const doctor of doctors) {
       const decryptedEmail = decrypt(doctor.email, secretKey);
@@ -1036,7 +976,6 @@ const reset_password = async (req, res) => {
       if (decryptedEmail === email) {
         const hashedPassword = await bcrypt.hash(password, 10);
         const userId = find_Email[0].id;
-        console.log("userId----", userId);
         const newPassword = await prisma.doctor_details.update({
           where: {
             id: userId,
@@ -1045,7 +984,6 @@ const reset_password = async (req, res) => {
             password: hashedPassword,
           },
         });
-        console.log("newpassword----", newPassword);
         res.status(200).json({
           error: true,
           success: false,
@@ -1061,7 +999,6 @@ const reset_password = async (req, res) => {
       }
     }
   } catch (err) {
-    console.log("error---", err);
     res.status(400).json({
       error: true,
       success: false,
@@ -1071,7 +1008,6 @@ const reset_password = async (req, res) => {
 };
 //add doctor feedback
 const doctor_feedback = async (req, res) => {
-  console.log("doctorfeedback", req.body);
   try {
     const { user_id, doctor_id, message, rating, interactedid } = req.body;
     const status = "requested";
@@ -1090,7 +1026,7 @@ const doctor_feedback = async (req, res) => {
         st_modifiedDate: istDate,
       },
     });
-    console.log({ update });
+
     const create = await prisma.doctor_feedback.create({
       data: {
         user_id,
@@ -1102,7 +1038,6 @@ const doctor_feedback = async (req, res) => {
       },
     });
     if (create) {
-      console.log("yeahh");
       res.status(201).json({
         error: false,
         message: "Successfully added your feedback",
@@ -1168,7 +1103,7 @@ const get_feedback = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in get_feedback API`);
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1188,7 +1123,7 @@ const get_searchdata = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in get_searchdata API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1252,7 +1187,6 @@ const getadoctorfeedback = async (req, res) => {
       0
     );
     const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
-    console.log({ averageRating });
 
     res.status(200).json({
       success: true,
@@ -1263,7 +1197,7 @@ const getadoctorfeedback = async (req, res) => {
     logger.error(
       `Internal server error: ${error.message} in getadoctorfeedback API`
     );
-    console.error(error);
+
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1321,7 +1255,7 @@ const doctor_disable = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in doctor_disable API`
     );
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1353,7 +1287,7 @@ const getunapprovedrs = async (request, response) => {
     logger.error(
       `Internal server error: ${error.message} in getunapprovedrs API`
     );
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1395,7 +1329,7 @@ const approvedr = async (request, response) => {
     }
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in approvedr API`);
-    console.error(error);
+
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
@@ -1583,7 +1517,7 @@ const completeedit = async (req, res) => {
       where: { id: id },
       data: updateData,
     });
-    console.log({ updateFields });
+
     if (edited_data && updateFields.length > 0) {
       const text = `Successfully updated your ${updateFields.join(", ")}.`;
       await prisma.adm_notification.create({
@@ -1610,7 +1544,7 @@ const completeedit = async (req, res) => {
     }
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in completeedit API`);
-    console.error(error);
+
     return res.status(500).json({
       error: true,
       message: "Internal Server Error",
