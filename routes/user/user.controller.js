@@ -629,7 +629,7 @@ const userLogin = async (request, response) => {
       return response.status(200).json({
         success: true,
         error: false,
-        message: "Login successful----testinggggggggg", //message: "Login successful
+        message: "Login successful", //message: "Login successful
         refreshToken,
         accessToken,
         userId: logged_id,
