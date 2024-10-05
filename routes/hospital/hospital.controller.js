@@ -776,6 +776,7 @@ const add_doctor = async (req, res) => {
     //   (ele) => ele.availableTimes[0].startTime && ele.availableTimes[0].endTime
     // );
     // if (isAnyAvailableTimesExist === true) {
+   
     const hospital_doctor = await prisma.doctor_hospital.create({
       data: {
         hospital_id: hospital_id,
@@ -1444,6 +1445,7 @@ const hospital_feedback = async (req, res) => {
 };
 
 const hospital_searchdata = async (req, res) => {
+  console.log("hospitalllllll_searchdataaa")
   try {
     const { user_id, speciality, type } = req.body;
 
@@ -1457,12 +1459,13 @@ const hospital_searchdata = async (req, res) => {
 
     const create = await prisma.hospital_searchdata.create({
       data: {
-        user_id,
+        user_id:user_id || null,
         speciality,
         type,
         created_date: istDate,
       },
     });
+    console.log({create})
     if (create) {
       res.status(201).json({
         error: false,

@@ -788,7 +788,7 @@ const lab_searchdata = async (req, res) => {
 
     const create = await prisma.lab_searchdata.create({
       data: {
-        user_id,
+        user_id: user_id || null,
         speciality,
         type,
         created_date: istDate,
@@ -910,7 +910,6 @@ const getalabfeedback = async (req, res) => {
         },
       };
     });
-    console.log("datas========", datas[0]?.userid);
     // Calculate the sum and average of the ratings
     const totalRatings = datas.reduce(
       (sum, feedback) => sum + feedback.rating,

@@ -38,18 +38,23 @@ const logger = winston.createLogger({
 
 const addreport = async (request, response) => {
   console.log("Request Body:", request.body);
- 
+
   try {
     const currentDate = new Date();
     const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
     const istDate = new Date(currentDate.getTime() + istOffset);
     const user_id = request.user.userId;
-    // const user_id= 7
     const { department, contact_no, patient_name, doctor_name, remarks } =
       request.body;
 
     // Validation
-    if (!department || !contact_no || !patient_name || !doctor_name) {
+    if (
+      !department ||
+      !contact_no ||
+      !patient_name ||
+      !doctor_name ||
+      !remarks
+    ) {
       return response
         .status(400)
         .json({ message: "Missing required fields", error: true });
@@ -92,7 +97,7 @@ const addreport = async (request, response) => {
         doctor_name,
         department,
         alternative_number: contact_no,
-        remarks,
+        remarks: remarks,
         user_id,
         created_date: istDate,
         status: "submitted",

@@ -1069,7 +1069,7 @@ const doctor_searchdata = async (req, res) => {
 
     const create = await prisma.doctor_searchdata.create({
       data: {
-        user_id,
+        user_id: user_id || null,
         speciality,
         type,
         created_date: istDate,

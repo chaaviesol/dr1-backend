@@ -577,17 +577,24 @@ const salesorder = async (request, response) => {
 
     await prisma.$transaction(async (prisma) => {
       const currentDate = new Date();
-      const twoDigits = currentDate.getFullYear();
+      const year = currentDate.getFullYear();
 
-      const lastFourDigits = twoDigits.toString().slice(-2);
-      const cus_code = lastFourDigits;
-      const so_num = cus_code.toUpperCase();
-
-      const existingsalesOrders = await prisma.sales_order.findMany();
+      const lastTwoDigits = year.toString().slice(-2);
+      const so_num = "SO";
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+      const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+      const existingsalesOrders = await prisma.sales_order.findMany({
+        where: {
+          created_date: {
+            gte: startOfYear,
+            lt: endOfYear,
+          },
+        },
+      });
       const newid = existingsalesOrders.length + 1;
       const formattedNewId = ("0000" + newid).slice(-4);
-      const so_number = so_num + formattedNewId;
-
+      const so_number = so_num + lastTwoDigits + formattedNewId;
+      console.log({ so_number });
       let total_amount_fixed;
 
       if (total_amount) {
@@ -599,6 +606,7 @@ const salesorder = async (request, response) => {
 
       sales_order = await prisma.sales_order.create({
         data: {
+          so_number:so_number,
           total_amount: total_amount_fixed,
           so_status: "Placed",
           remarks,
@@ -1042,8 +1050,8 @@ const medicineadd = async (request, response) => {
 //////for normal type salesorder////////////////////////
 const createinvoice = async (request, response) => {
   try {
-    const { sales_id, sold_by, description } = request.body;
-    if (!sales_id || !description || !sold_by) {
+    const { sales_id, sold_by, medication_details } = request.body;
+    if (!sales_id || !medication_details || !sold_by) {
       return response.status(400).json({ error: "All fields are required" });
     }
     // const invoice_no=
@@ -1052,7 +1060,7 @@ const createinvoice = async (request, response) => {
         sales_id,
         sold_by,
         invoice_no,
-        description,
+        medication_details,
         created_date: istDate,
       },
     });
@@ -1150,7 +1158,6 @@ const prescriptioninvoice = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
 
 const getainvoice = async (request, response) => {
   try {
