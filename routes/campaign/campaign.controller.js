@@ -1,35 +1,7 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-const winston = require("winston");
-const fs = require("fs");
-
-
-// Create a logs directory if it doesn't exist
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-// Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
-const currentDate = new Date();
-const istOffset = 5.5 * 60 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
+const {getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
 
 const createcampaign = async (request, response) => {
+  const datetime = getCurrentDateInIST();
   try {
     const {
       name,
@@ -91,7 +63,7 @@ const createcampaign = async (request, response) => {
               image: image,
               status: "Y",
               created_by: created_by,
-              created_date: istDate,
+              created_date: datetime,
             },
           });
           response.status(200).json({
@@ -124,6 +96,7 @@ const createcampaign = async (request, response) => {
 
 const getcampaign = async (request, response) => {
   try {
+    const datetime = getCurrentDateInIST();
     const campaignsdata = await prisma.campaigns.findMany({
       where: {
         NOT: {
@@ -135,7 +108,7 @@ const getcampaign = async (request, response) => {
       },
     });
     const updatedCampaigns = campaignsdata.map(async (campaign) => {
-      if (campaign.status === "Y" && istDate > campaign.end_date) {
+      if (campaign.status === "Y" && datetime > campaign.end_date) {
         await prisma.campaigns.update({
           where: {
             id: campaign.id,
@@ -200,7 +173,7 @@ const singlecampaign = async (request, response) => {
         });
 
         const updatedCampaigns = coupon.map(async (campaign) => {
-          if (campaign.status === "Y" && istDate > campaign.end_date) {
+          if (campaign.status === "Y" && datetime > campaign.end_date) {
             await prisma.campaigns.update({
               where: {
                 id: campaign.id,
@@ -258,6 +231,7 @@ const singlecampaign = async (request, response) => {
 };
 
 const allproducts = async (request, response) => {
+  const datetime = getCurrentDateInIST();
   try {
     const allprods = await prisma.product_master.findMany({
       where: {
@@ -283,7 +257,7 @@ const allproducts = async (request, response) => {
       });
 
       const updatedCampaigns = coupon.map(async (campaign) => {
-        if (campaign.status === "Y" && istDate > campaign.end_date) {
+        if (campaign.status === "Y" && datetime > campaign.end_date) {
           await prisma.campaigns.update({
             where: {
               id: campaign.id,
@@ -332,6 +306,7 @@ const allproducts = async (request, response) => {
 
 const single_product = async (request, response) => {
   try {
+    const datetime = getCurrentDateInIST();
     const product_id = request.body.product_id;
     const allprods = await prisma.product_master.findUnique({
       where: {
@@ -354,7 +329,7 @@ const single_product = async (request, response) => {
     });
 
     const updatedCampaigns = coupon.map(async (campaign) => {
-      if (campaign.status === "Y" && istDate > campaign.end_date) {
+      if (campaign.status === "Y" && datetime > campaign.end_date) {
         await prisma.campaigns.update({
           where: {
             id: campaign.id,

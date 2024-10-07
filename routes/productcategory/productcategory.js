@@ -1,46 +1,12 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-const bcrypt = require("bcrypt");
-const { encrypt, decrypt } = require("../../utils");
+const { getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
 require("dotenv").config();
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-const nodemailer = require("nodemailer");
-const hbs = require("nodemailer-express-handlebars");
-const path = require("path");
-
-const winston = require("winston");
-const fs = require("fs");
-const { constants } = require("crypto");
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 
 /////////////////productcategoryy///////////////////////
-
 const addcategory = async (request, response) => {
   try {
     let { id, category } = JSON.parse(request.body.data);
     const imageLink = request.file?.location;
-
+    const datetime = getCurrentDateInIST();
     category = category?.trim().replace(/\s+/g, " ");
 
     // Validate the required fields
@@ -89,7 +55,7 @@ const addcategory = async (request, response) => {
           data: {
             category: upr_category,
             image: imageLink,
-            modified_date: istDate,
+            modified_date: datetime,
           },
         });
 
@@ -108,7 +74,7 @@ const addcategory = async (request, response) => {
           data: {
             category: upr_category,
             image: imageLink,
-            modified_date: istDate,
+            modified_date: datetime,
           },
         });
 
@@ -139,7 +105,7 @@ const addcategory = async (request, response) => {
           status: true,
           category: upr_category,
           image: imageLink,
-          created_date: istDate,
+          created_date: datetime,
         },
       });
 
@@ -270,17 +236,16 @@ const getcategorywise = async (request, response) => {
 
         const products = await prisma.generic_product.findMany();
         const matchingProducts = products
-        .filter((product) => {
-          return product.category.some(
-            (cat) => normalizeString(cat) === normalizedCategory
-          );
-        })
-        .map((product) => ({
-          ...product,
-          quantity: 0, 
-        }));
-       
-        
+          .filter((product) => {
+            return product.category.some(
+              (cat) => normalizeString(cat) === normalizedCategory
+            );
+          })
+          .map((product) => ({
+            ...product,
+            quantity: 0,
+          }));
+
         resultObject.push({
           id: categories[i].id,
           categoryName: categories[i].category,

@@ -1,42 +1,19 @@
-const { PrismaClient } = require("@prisma/client");
-const { encrypt, decrypt } = require("../../utils");
+const {
+  encrypt,
+  decrypt,
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+} = require("../../utils");
 require("dotenv").config();
-const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
 const nodemailer = require("nodemailer");
-const otpGenerator = require("otp-generator");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
-const winston = require("winston");
-const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const csv = require("csv-parser");
-const multer = require("multer");
-const logDirectory = "./logs";
 
-const secretKey = process.env.ENCRYPTION_KEY;
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 ///////////csv-file/////////////////////
 // const csvupload = async (req, res) => {
 //   try {
@@ -339,6 +316,8 @@ async function insertData(data) {
 //   }
 // }
 
+/////////////////////////////////////////////////////////////
+
 const addUsers = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
   const safeDecrypt = (text, key) => {
@@ -411,7 +390,7 @@ const addUsers = async (request, response) => {
           });
         }
       }
-
+      const datetime = getCurrentDateInIST();
       const hashedPass = await bcrypt.hash(password, 5);
       const emailencrypted = encrypt(emaillowercase, secretKey);
       const phoneencrypted = encrypt(phone_no, secretKey);
@@ -420,7 +399,7 @@ const addUsers = async (request, response) => {
           name: encrypt(name, secretKey),
           password: hashedPass,
           email: emailencrypted,
-          datetime: istDate,
+          datetime: datetime,
           phone_no: phoneencrypted,
           status: "Y",
         },
@@ -448,7 +427,7 @@ const completeRegistration = async (request, response) => {
     const secretKey = process.env.ENCRYPTION_KEY;
     const user_id = request.user.userId;
     const userimg = request.file?.location;
-    console.log({ userimg });
+
     const { ageGroup, gender, pincode } = JSON.parse(request.body.data);
     if (user_id && ageGroup && gender && pincode) {
       const user = await prisma.user_details.findFirst({
@@ -463,6 +442,7 @@ const completeRegistration = async (request, response) => {
           message: resptext,
         });
       } else {
+        const datetime = getCurrentDateInIST();
         const encryptedagegroup = encrypt(ageGroup, secretKey);
         const encryptedgender = encrypt(gender, secretKey);
         await prisma.user_details.update({
@@ -473,7 +453,7 @@ const completeRegistration = async (request, response) => {
             ageGroup: encryptedagegroup,
             gender: encryptedgender,
             pincode,
-            updatedDate: istDate,
+            updatedDate: datetime,
             image: userimg,
           },
         });
@@ -510,9 +490,7 @@ const userLogin = async (request, response) => {
     }
   };
   const secretKey = process.env.ENCRYPTION_KEY;
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   if (!email || !password) {
     return response.status(401).json({
@@ -623,7 +601,7 @@ const userLogin = async (request, response) => {
 
       await prisma.user_details.update({
         where: { id: logged_id },
-        data: { last_active: istDate },
+        data: { last_active: datetime },
       });
 
       return response.status(200).json({
@@ -649,9 +627,7 @@ const userLogin = async (request, response) => {
 };
 
 const getusers = async (request, response) => {
-  console.log("getuserssss");
   const secretKey = process.env.ENCRYPTION_KEY;
-
   const safeDecrypt = (text, key) => {
     try {
       return decrypt(text, key);
@@ -813,6 +789,7 @@ const edituser = async (request, response) => {
           error: true,
         });
       }
+      const datetime = getCurrentDateInIST();
       const encryptedname = encrypt(name, secretKey);
       const encryptedagegroup = encrypt(ageGroup, secretKey);
       const encryptedgender = encrypt(gender, secretKey);
@@ -825,7 +802,7 @@ const edituser = async (request, response) => {
           ageGroup: encryptedagegroup,
           gender: encryptedgender,
           pincode: pincode,
-          updatedDate: istDate,
+          updatedDate: datetime,
           image: userimg,
         },
       });
@@ -854,13 +831,14 @@ const deleteuser = async (request, response) => {
   try {
     const id = request.body.id;
     if (id) {
+      const datetime = getCurrentDateInIST();
       const del = await prisma.user_details.update({
         where: {
           id: id,
         },
         data: {
           is_active: "N",
-          updatedDate: istDate,
+          updatedDate: datetime,
         },
       });
       response.status(200).json({
@@ -885,9 +863,7 @@ const deleteuser = async (request, response) => {
 ///login for doctor,lab and hospital
 const login = async (request, response) => {
   console.log("Request body:", request.body);
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     const { email, password, googleVerified } = request.body;
@@ -1004,7 +980,7 @@ const login = async (request, response) => {
     const updateLastActive = async () => {
       await prisma[`${databasetype}_details`].update({
         where: { id },
-        data: { last_active: istDate },
+        data: { last_active: datetime },
       });
     };
 
@@ -1647,16 +1623,14 @@ const viewchatdetails = async (request, response) => {
 };
 
 const consultcount = async (request, response) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   try {
     const userid = request.user.userId;
     const { id, type, status } = request.body;
     const consultcount = 1;
     // Define 24hours ago hours
     const twentyFourHoursAgo = new Date(
-      istDate.getTime() - 24 * 60 * 60 * 1000
+      datetime.getTime() - 24 * 60 * 60 * 1000
     );
     // 24 hours in milliseconds
     // const oneWeekAgo = new Date(istDate.getTime() - 168 * 60 * 60 * 1000); // 168 hours
@@ -1686,8 +1660,8 @@ const consultcount = async (request, response) => {
               user_id: userid,
               hospital_id: id,
               consultcount: consultcount || 1,
-              created_date: istDate,
-              st_modifiedDate: istDate,
+              created_date: datetime,
+              st_modifiedDate: datetime,
               status: status,
             },
           });
@@ -1720,8 +1694,8 @@ const consultcount = async (request, response) => {
             user_id: userid,
             hospital_id: id,
             consultcount: 1,
-            created_date: istDate,
-            st_modifiedDate: istDate,
+            created_date: datetime,
+            st_modifiedDate: datetime,
             status: status,
           },
         });
@@ -1756,8 +1730,8 @@ const consultcount = async (request, response) => {
               user_id: userid,
               lab_id: id,
               consultcount: 1,
-              created_date: istDate,
-              st_modifiedDate: istDate,
+              created_date: datetime,
+              st_modifiedDate: datetime,
               status: status,
             },
           });
@@ -1790,8 +1764,8 @@ const consultcount = async (request, response) => {
             user_id: userid,
             lab_id: id,
             consultcount: 1,
-            created_date: istDate,
-            st_modifiedDate: istDate,
+            created_date: datetime,
+            st_modifiedDate: datetime,
             status: status,
           },
         });
@@ -1827,8 +1801,8 @@ const consultcount = async (request, response) => {
               user_id: userid,
               doctor_id: id,
               consultcount: 1,
-              created_date: istDate,
-              st_modifiedDate: istDate,
+              created_date: datetime,
+              st_modifiedDate: datetime,
               status: status,
             },
           });
@@ -1861,8 +1835,8 @@ const consultcount = async (request, response) => {
             user_id: userid,
             doctor_id: id,
             consultcount: 1,
-            created_date: istDate,
-            st_modifiedDate: istDate,
+            created_date: datetime,
+            st_modifiedDate: datetime,
             status: status,
           },
         });
@@ -1897,6 +1871,7 @@ const viewcount = async (request, response) => {
   console.log("viewcountttttttt===========>", request.body);
   try {
     const userid = request.user.userId;
+    const datetime = getCurrentDateInIST();
     const { id, type } = request.body;
     if (userid && type == "Hospital") {
       const check = await prisma.hospital_interacteduser.findFirst({
@@ -1911,7 +1886,7 @@ const viewcount = async (request, response) => {
             user_id: userid,
             hospital_id: id,
             viewcount: 1,
-            created_date: istDate,
+            created_date: datetime,
           },
         });
         if (update) {
@@ -1927,8 +1902,7 @@ const viewcount = async (request, response) => {
             user_id: userid,
             hospital_id: id,
             viewcount: 1,
-            created_date: istDate,
-            // st_modifiedDate:istDate
+            created_date: datetime,
           },
         });
         if (add) {
@@ -1957,8 +1931,7 @@ const viewcount = async (request, response) => {
             user_id: userid,
             lab_id: id,
             viewcount: 1,
-            created_date: istDate,
-            // st_modifiedDate:istDate
+            created_date: datetime,
           },
         });
         if (update) {
@@ -1974,8 +1947,7 @@ const viewcount = async (request, response) => {
             user_id: userid,
             lab_id: id,
             viewcount: 1,
-            created_date: istDate,
-            // st_modifiedDate:istDate
+            created_date: datetime,
           },
         });
         if (add) {
@@ -2000,7 +1972,7 @@ const viewcount = async (request, response) => {
             user_id: userid,
             doctor_id: id,
             viewcount: 1,
-            created_date: istDate,
+            created_date: datetime,
             // st_modifiedDate:istDate
           },
         });
@@ -2017,7 +1989,7 @@ const viewcount = async (request, response) => {
             user_id: userid,
             doctor_id: id,
             viewcount: 1,
-            created_date: istDate,
+            created_date: datetime,
             // st_modifiedDate:istDate
           },
         });
@@ -2485,13 +2457,11 @@ const monthlyCount = async (request, response) => {
 
 const Doctorafterconsult = async (request, response) => {
   console.log("docafterconsulttttt");
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   const user_id = request.user.userId;
-  const past72HoursDate = new Date(istDate.getTime() - 72 * 60 * 60 * 1000);
+  const past72HoursDate = new Date(datetime.getTime() - 72 * 60 * 60 * 1000);
   const threeDaysAgoDate = new Date(
-    istDate.getTime() - 3 * 24 * 60 * 60 * 1000
+    datetime.getTime() - 3 * 24 * 60 * 60 * 1000
   );
 
   try {
@@ -2551,7 +2521,7 @@ const Doctorafterconsult = async (request, response) => {
         });
 
         const oneWeekAgoDate = new Date(
-          istDate.getTime() - 7 * 24 * 60 * 60 * 1000
+          datetime.getTime() - 7 * 24 * 60 * 60 * 1000
         );
 
         if (
@@ -2593,14 +2563,12 @@ const Doctorafterconsult = async (request, response) => {
 
 const hospitalafterconsult = async (request, response) => {
   console.log("hospitalafterconsulttttt");
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   const user_id = request.user.userId;
-  const past72HoursDate = new Date(istDate.getTime() - 72 * 60 * 60 * 1000);
-  // const past72HoursDate = new Date(istDate.getTime() - 1 * 60 * 1000);
+  const past72HoursDate = new Date(datetime.getTime() - 72 * 60 * 60 * 1000);
+  // const past72HoursDate = new Date(datetime.getTime() - 1 * 60 * 1000);
   const threeDaysAgoDate = new Date(
-    istDate.getTime() - 3 * 24 * 60 * 60 * 1000
+    datetime.getTime() - 3 * 24 * 60 * 60 * 1000
   );
 
   try {
@@ -2658,7 +2626,7 @@ const hospitalafterconsult = async (request, response) => {
 
         // Check if feedback exists and is older than 1 week
         const oneWeekAgoDate = new Date(
-          istDate.getTime() - 7 * 24 * 60 * 60 * 1000
+          datetime.getTime() - 7 * 24 * 60 * 60 * 1000
         );
         if (
           !feedback ||
@@ -2698,13 +2666,11 @@ const hospitalafterconsult = async (request, response) => {
 
 const labafterconsult = async (request, response) => {
   console.log("labafterconsulttttt");
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   const user_id = request.user.userId;
-  const past72HoursDate = new Date(istDate.getTime() - 72 * 60 * 60 * 1000);
+  const past72HoursDate = new Date(datetime.getTime() - 72 * 60 * 60 * 1000);
   const threeDaysAgoDate = new Date(
-    istDate.getTime() - 3 * 24 * 60 * 60 * 1000
+    datetime.getTime() - 3 * 24 * 60 * 60 * 1000
   );
 
   try {
@@ -2763,7 +2729,7 @@ const labafterconsult = async (request, response) => {
         });
 
         const oneWeekAgoDate = new Date(
-          istDate.getTime() - 7 * 24 * 60 * 60 * 1000
+          datetime.getTime() - 7 * 24 * 60 * 60 * 1000
         );
 
         if (
@@ -2804,9 +2770,7 @@ const labafterconsult = async (request, response) => {
 
 const afterconsultupdate = async (request, response) => {
   console.log("afterconssssssssssssssulttt", request.body);
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   try {
     //status==>L (later) || N ==>Not consulted ||  Y==>Consulted  || NR ==>Not responded
     const user_id = request.user.userId;
@@ -2842,7 +2806,7 @@ const afterconsultupdate = async (request, response) => {
         },
         data: {
           status: status,
-          st_modifiedDate: istDate,
+          st_modifiedDate: datetime,
         },
       });
       // console.log({ interactions });
@@ -2853,7 +2817,7 @@ const afterconsultupdate = async (request, response) => {
       //   },
       //   data: {
       //     status: status,
-      //     st_modifiedDate: istDate,
+      //     st_modifiedDate: datetime,
       //   },
       // });
       if (interactions) {
@@ -2887,7 +2851,7 @@ const afterconsultupdate = async (request, response) => {
         },
         data: {
           status: status,
-          st_modifiedDate: istDate,
+          st_modifiedDate: datetime,
         },
       });
       if (interactions) {
@@ -2922,7 +2886,7 @@ const afterconsultupdate = async (request, response) => {
         },
         data: {
           status: status,
-          st_modifiedDate: istDate,
+          st_modifiedDate: datetime,
         },
       });
 
@@ -3022,9 +2986,7 @@ const getunapproveuser = async (request, response) => {
 const approveuser = async (request, response) => {
   try {
     const { id, status } = request.body;
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
 
     if (!id) {
       return response.status(400).json({ message: "User ID is required." });
@@ -3036,7 +2998,7 @@ const approveuser = async (request, response) => {
 
     const user = await prisma.user_details.update({
       where: { id: id },
-      data: { status: status, updatedDate: istDate },
+      data: { status: status, updatedDate: datetime },
     });
 
     if (user) {

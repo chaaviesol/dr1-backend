@@ -1,33 +1,13 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const {
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+  decrypt,
+} = require("../../utils");
 const bcrypt = require("bcrypt");
-const winston = require("winston");
-const fs = require("fs");
-const { encrypt, decrypt } = require("../../utils");
+const datetime = getCurrentDateInIST();
 require("dotenv").config();
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 
 //registration of hospitals
 const hospital_registration = async (req, res) => {
@@ -47,6 +27,7 @@ const hospital_registration = async (req, res) => {
     email,
   } = JSON.parse(req.body.data);
   const date = new Date();
+  const datetime = getCurrentDateInIST();
   try {
     const hospital_image = req.files;
     let hospitalImage = {};
@@ -116,14 +97,13 @@ const hospital_registration = async (req, res) => {
         speciality: specialties,
         contact_no: contact_no,
         onlinebooking: onlinebooking,
-        datetime: date,
+        datetime: datetime,
         password: hashedpassword,
         email: emaillower,
         focusarea: focusarea,
         about: about,
         type: type,
         pincode: parseInt(pincode),
-        datetime: date,
         status: "P",
       },
     });
@@ -133,7 +113,7 @@ const hospital_registration = async (req, res) => {
     //     type: "Hospital",
     //     read: "N",
     //     text: "Hospital successfully registered",
-    //     created_date: istDate
+    //     created_date: datetime
     //   },
     // })
     res.status(200).json({
@@ -289,14 +269,14 @@ const get_hospital = async (req, res) => {
 const edit_hospital = async (req, res) => {
   try {
     const { hospital_id, about } = req.body;
-
+    const datetime = getCurrentDateInIST();
     const edited_details = await prisma.hospital_details.update({
       where: {
         id: hospital_id,
       },
       data: {
         about: about,
-        updatedDate: istDate,
+        updatedDate: datetime,
       },
     });
     if (edited_details) {
@@ -317,6 +297,7 @@ const edit_hospital = async (req, res) => {
 };
 //admin editing the hospital details
 const editbyadmin = async (req, res) => {
+  const datetime = getCurrentDateInIST();
   try {
     const {
       hospital_id,
@@ -345,7 +326,7 @@ const editbyadmin = async (req, res) => {
         focusarea: focusarea,
         contact_no: contact_no,
         onlinebooking: onlinebooking,
-        updatedDate: istDate,
+        updatedDate: datetime,
       },
     });
 
@@ -366,9 +347,7 @@ const editbyadmin = async (req, res) => {
 };
 
 const completeedit = async (req, res) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     const {
@@ -492,7 +471,7 @@ const completeedit = async (req, res) => {
       pincode: checkChanges("pincode", pincode),
       type: checkChanges("type", type),
       email: checkChanges("email", email),
-      updatedDate: istDate,
+      updatedDate: datetime,
       focusarea: checkChanges("focusarea", focusarea),
     };
 
@@ -514,7 +493,7 @@ const completeedit = async (req, res) => {
           type: "Hospital",
           read: "N",
           text: text,
-          created_date: istDate,
+          created_date: datetime,
         },
       });
       return res.status(200).json({
@@ -577,6 +556,7 @@ const add_doctor = async (req, res) => {
   try {
     const docImageLink = req?.file?.location;
     const secretKey = process.env.ENCRYPTION_KEY;
+    const datetime = getCurrentDateInIST();
     const safeDecrypt = (text, key) => {
       try {
         return decrypt(text, key);
@@ -621,7 +601,6 @@ const add_doctor = async (req, res) => {
       return res.send(resptext);
     }
     function validateEmail(email_id) {
-      // Regular expression for a simple email validation
       // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const emailRegex = /^[^\s@]+/;
 
@@ -676,9 +655,7 @@ const add_doctor = async (req, res) => {
     const encryptedPhone = encrypt(phone_no, secretKey);
     // const encryptedEmail = encrypt(email, secretKey);
     const encryptedRegistrationNo = encrypt(registration_no, secretKey);
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+
     const added_doctorData = await prisma.doctor_details.create({
       data: {
         name: capitalised_name,
@@ -693,7 +670,7 @@ const add_doctor = async (req, res) => {
         experience: experience,
         registration_no: encryptedRegistrationNo,
         specialization: specialization,
-        datetime: istDate,
+        datetime: datetime,
         status: "P",
       },
     });
@@ -776,12 +753,12 @@ const add_doctor = async (req, res) => {
     //   (ele) => ele.availableTimes[0].startTime && ele.availableTimes[0].endTime
     // );
     // if (isAnyAvailableTimesExist === true) {
-   
+
     const hospital_doctor = await prisma.doctor_hospital.create({
       data: {
         hospital_id: hospital_id,
         doctor_id: doctor_id,
-        datetime: istDate,
+        datetime: datetime,
         // days_timing: days,
       },
     });
@@ -811,8 +788,7 @@ const add_doctor = async (req, res) => {
 const consultation_data = async (req, res) => {
   try {
     const { doctor_id, days, hospital_id } = req.body;
-    const date = new Date();
-
+    const datetime = getCurrentDateInIST();
     if (!doctor_id) {
       return res.status(404).json({
         message: "Required fields can't be null",
@@ -840,7 +816,7 @@ const consultation_data = async (req, res) => {
     if (isAnyAvailableTimesExist === true) {
       let data = {
         doctor_id: doctor_id,
-        datetime: date,
+        datetime: datetime,
         days_timing: days,
         hospital_id: hospitalid,
       };
@@ -1231,6 +1207,7 @@ const doctor_consultationList = async (req, res) => {
 //editing the consultation details
 const edit_consultation = async (req, res) => {
   try {
+    const datetime = getCurrentDateInIST();
     const { id, days_timing } = req.body;
     const edited_data = await prisma.doctor_hospital.update({
       where: {
@@ -1238,7 +1215,7 @@ const edit_consultation = async (req, res) => {
       },
       data: {
         days_timing: days_timing,
-        updated_date: istDate,
+        updated_date: datetime,
       },
     });
     if (edited_data) {
@@ -1396,6 +1373,7 @@ const get_hospitalDetails = async (req, res) => {
 
 const hospital_feedback = async (req, res) => {
   try {
+    const datetime = getCurrentDateInIST();
     const { user_id, hospital_id, message, rating, interactedid } = req.body;
     const status = "requested";
     if (!user_id || !hospital_id) {
@@ -1410,7 +1388,7 @@ const hospital_feedback = async (req, res) => {
       },
       data: {
         status: "Y",
-        st_modifiedDate: istDate,
+        st_modifiedDate: datetime,
       },
     });
 
@@ -1421,7 +1399,7 @@ const hospital_feedback = async (req, res) => {
         message,
         rating,
         status: status,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     if (create) {
@@ -1445,10 +1423,10 @@ const hospital_feedback = async (req, res) => {
 };
 
 const hospital_searchdata = async (req, res) => {
-  console.log("hospitalllllll_searchdataaa")
+  console.log("hospitalllllll_searchdataaa");
   try {
     const { user_id, speciality, type } = req.body;
-
+    const datetime = getCurrentDateInIST();
     // Input validation: check if at least speciality or type is provided
     if (!speciality && !type) {
       return res.status(400).json({
@@ -1459,13 +1437,13 @@ const hospital_searchdata = async (req, res) => {
 
     const create = await prisma.hospital_searchdata.create({
       data: {
-        user_id:user_id || null,
+        user_id: user_id || null,
         speciality,
         type,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
-    console.log({create})
+    console.log({ create });
     if (create) {
       res.status(201).json({
         error: false,
@@ -1690,9 +1668,7 @@ const feedbackapproval = async (req, res) => {
 const hospital_disable = async (request, response) => {
   try {
     const { id, type, status } = request.body;
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     if (id && status) {
       const disable = await prisma.hospital_details.update({
         where: {
@@ -1700,7 +1676,7 @@ const hospital_disable = async (request, response) => {
         },
         data: {
           status: status,
-          updatedDate: istDate,
+          updatedDate: datetime,
         },
       });
       let newstatus;
@@ -1715,7 +1691,7 @@ const hospital_disable = async (request, response) => {
       });
     } else if ((type = "all")) {
       // Calculate the date 6 months ago
-      const sixMonthsAgo = new Date(istDate);
+      const sixMonthsAgo = new Date(datetime);
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
       const inactive = await prisma.hospital_details.findMany({
         where: {
@@ -1790,9 +1766,7 @@ const getunapprovehsptl = async (request, response) => {
 const approvehospital = async (request, response) => {
   try {
     const { id, status } = request.body;
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
 
     if (!id) {
       return response.status(400).json({ message: "Hospital ID is required." });
@@ -1804,7 +1778,7 @@ const approvehospital = async (request, response) => {
 
     const hospital = await prisma.hospital_details.update({
       where: { id: id },
-      data: { status: status, updatedDate: istDate },
+      data: { status: status, updatedDate: datetime },
     });
 
     if (hospital) {

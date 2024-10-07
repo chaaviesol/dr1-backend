@@ -1,43 +1,9 @@
-const { PrismaClient } = require("@prisma/client");
-const { encrypt, decrypt } = require("../../utils");
-const prisma = new PrismaClient();
-const {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} = require("@google/generative-ai");
+const { decrypt, getCurrentDateInIST,istDate, logger, prisma } = require("../../utils");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-const winston = require("winston");
-const fs = require("fs");
-const { response } = require("express");
-const { error, log } = require("console");
-//Configure the Winston logger
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 
 const pharmacyadd = async (request, response) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     const { name, phone_no, address, lisence_no, email, pincode } =
@@ -84,7 +50,7 @@ const pharmacyadd = async (request, response) => {
         lisence_no,
         email,
         pincode,
-        datetime: istDate,
+        datetime: datetime,
       },
     });
 
@@ -216,9 +182,7 @@ const filterpharmacy = async (request, response) => {
 ////////////from productadd to salesorder /////////////
 
 const productadd = async (request, response) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   try {
     const { id, name, description, category, created_by, mrp, brand, images } =
       JSON.parse(request.body.data);
@@ -264,7 +228,7 @@ const productadd = async (request, response) => {
           images: productImage,
           mrp: parseInt(mrp),
           brand,
-          created_date: istDate,
+          created_date: datetime,
           is_active: "Y",
         },
       });
@@ -293,7 +257,7 @@ const productadd = async (request, response) => {
           images: productImage,
           mrp: parseInt(mrp),
           brand,
-          created_date: istDate,
+          created_date: datetime,
           is_active: "Y",
         },
       });
@@ -314,6 +278,7 @@ const productadd = async (request, response) => {
 
 const disableproduct = async (request, response) => {
   console.log("objecdisssssssst", request.body);
+  const datetime = getCurrentDateInIST();
   try {
     const { id } = request.body;
     const allproducts = await prisma.generic_product.update({
@@ -322,6 +287,7 @@ const disableproduct = async (request, response) => {
       },
       data: {
         is_active: "N",
+        updated_date:datetime
       },
     });
     if (allproducts) {
@@ -372,6 +338,7 @@ const getproducts = async (request, response) => {
 const addToCart = async (request, response) => {
   const { prod_id, quantity } = request.body;
   const user_id = request.user.userId;
+  const datetime = getCurrentDateInIST();
   try {
     // Validate request body
     if (!user_id || !prod_id || !quantity) {
@@ -413,7 +380,7 @@ const addToCart = async (request, response) => {
         user_id: user_id,
         prod_id: prod_id,
         quantity: parseInt(quantity),
-        created_date: istDate,
+        created_date: datetime,
       },
     });
 
@@ -601,18 +568,17 @@ const salesorder = async (request, response) => {
         total_amount_fixed = parseFloat(total_amount).toFixed(2);
       }
 
-      const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-      const istDate = new Date(currentDate.getTime() + istOffset);
+      const datetime = getCurrentDateInIST();
 
       sales_order = await prisma.sales_order.create({
         data: {
-          so_number:so_number,
+          so_number: so_number,
           total_amount: total_amount_fixed,
           so_status: "Placed",
           remarks,
           order_type,
-          created_date: istDate,
-          updated_date: istDate,
+          created_date: datetime,
+          updated_date: datetime,
           customer_id: userId,
           delivery_address: delivery_address,
           contact_no: contact_no,
@@ -638,7 +604,7 @@ const salesorder = async (request, response) => {
               },
               order_qty: parseInt(product.quantity),
               net_amount: net_amount,
-              created_date: istDate,
+              created_date: datetime,
             },
           });
         }
@@ -679,7 +645,7 @@ const salesorder = async (request, response) => {
           data: {
             patient_name: name,
             prescription_image: imageprescription,
-            created_date: istDate,
+            created_date: datetime,
           },
         });
 
@@ -1006,9 +972,7 @@ const updatesalesorder = async (request, response) => {
 };
 
 const medicineadd = async (request, response) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
   try {
     const { name, status, is_prescriped, created_by } = request.body;
     if (!name || !status || !is_prescriped) {
@@ -1028,7 +992,7 @@ const medicineadd = async (request, response) => {
         status,
         is_prescriped,
         created_by,
-        created_date: istDate,
+        created_date: datetime,
         status: "Y",
       },
     });
@@ -1050,6 +1014,7 @@ const medicineadd = async (request, response) => {
 //////for normal type salesorder////////////////////////
 const createinvoice = async (request, response) => {
   try {
+    const datetime = getCurrentDateInIST();
     const { sales_id, sold_by, medication_details } = request.body;
     if (!sales_id || !medication_details || !sold_by) {
       return response.status(400).json({ error: "All fields are required" });
@@ -1061,7 +1026,7 @@ const createinvoice = async (request, response) => {
         sold_by,
         invoice_no,
         medication_details,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     if (create) {
@@ -1083,6 +1048,7 @@ const createinvoice = async (request, response) => {
 ///////////for prescription salesorder/////////////////
 
 const prescriptioninvoice = async (request, response) => {
+  const datetime = getCurrentDateInIST();
   try {
     const {
       sales_id,
@@ -1110,7 +1076,7 @@ const prescriptioninvoice = async (request, response) => {
         data: {
           total_amount: total_amount_fixed,
           so_status: so_status,
-          updated_date: istDate,
+          updated_date: datetime,
         },
       });
 
@@ -1127,7 +1093,7 @@ const prescriptioninvoice = async (request, response) => {
             },
             order_qty: parseInt(product.quantity),
             net_amount: net_amount,
-            created_date: istDate,
+            created_date: datetime,
           },
         });
       }
@@ -1138,7 +1104,7 @@ const prescriptioninvoice = async (request, response) => {
           sold_by,
           invoice_no, // Ensure you define `invoice_no` somewhere
           medication_details,
-          created_date: istDate,
+          created_date: datetime,
         },
       });
 

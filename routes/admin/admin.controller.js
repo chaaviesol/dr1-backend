@@ -1,37 +1,16 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 const bcrypt = require("bcrypt");
-const { encrypt, decrypt } = require("../../utils");
+const {
+  decrypt,
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+} = require("../../utils");
+
 require("dotenv").config();
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
 const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
-
-const winston = require("winston");
-const fs = require("fs");
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 
 const addadmin = async (request, response) => {
   try {
@@ -39,6 +18,7 @@ const addadmin = async (request, response) => {
     const { type, name, password, emailid, phone_no, created_by, user_access } =
       request.body;
     if (type && name && password && emailid && phone_no) {
+      const datetime = getCurrentDateInIST();
       const up_type = type.toUpperCase();
 
       const check = await prisma.admin_details.findFirst({
@@ -112,7 +92,7 @@ const addadmin = async (request, response) => {
           id: "desc",
         },
       });
-      const month = ("0" + (istDate.getMonth() + 1)).slice(-2);
+      const month = ("0" + (datetime.getMonth() + 1)).slice(-2);
       let new_user_id = 1;
 
       if (recentUserResult) {
@@ -123,7 +103,7 @@ const addadmin = async (request, response) => {
       }
       const ad_id =
         type.toUpperCase() +
-        istDate.getFullYear() +
+        datetime.getFullYear() +
         month +
         ("0000" + new_user_id).slice(-4);
 
@@ -137,7 +117,7 @@ const addadmin = async (request, response) => {
           phone_no: phone_no,
           adm_type: up_type,
           is_active: "Y",
-          created_date: istDate,
+          created_date: datetime,
           created_by,
           user_access: user_access,
         },
@@ -154,7 +134,7 @@ const addadmin = async (request, response) => {
       //     sender: new_id,
       //     read: "N",
       //     type: "UR",
-      //     created_date: istDate,
+      //     created_date: datetime,
       //     verification_id: ad_id
       //   }
       // })
@@ -164,7 +144,9 @@ const addadmin = async (request, response) => {
     }
   } catch (error) {
     response.status(500).json(error.message);
-    logger.error(`Internal server error: ${error.message} in admin-addadmin api`);
+    logger.error(
+      `Internal server error: ${error.message} in admin-addadmin api`
+    );
   } finally {
     await prisma.$disconnect();
   }
@@ -227,7 +209,9 @@ const adminLogin = async (request, response) => {
     });
   } catch (error) {
     console.log("errr", error);
-    logger.error(`Internal server error: ${error.message} in admin- admLogin api`);
+    logger.error(
+      `Internal server error: ${error.message} in admin- admLogin api`
+    );
     return response.status(500).json({
       error: true,
       success: false,
@@ -310,7 +294,9 @@ const editadmin = async (request, response) => {
       logger.error("id is undefined in editUser api");
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in admin-editUser api`);
+    logger.error(
+      `Internal server error: ${error.message} in admin-editUser api`
+    );
     response.status(500).json({
       error: true,
       success: false,
@@ -722,7 +708,7 @@ const addcategory = async (request, response) => {
   console.log("reeeeeeeeeee", request.body);
   try {
     const { main_type, type, department, services, features } = request.body;
-
+    const datetime = getCurrentDateInIST();
     // Validate the required field
     if (!main_type) {
       return response.status(400).json({
@@ -767,7 +753,7 @@ const addcategory = async (request, response) => {
           department,
           services,
           features,
-          modified_date: istDate, // Assuming there's a modified_date field to track updates
+          modified_date: datetime, // Assuming there's a modified_date field to track updates
         },
       });
       if (update.count > 0) {
@@ -788,7 +774,7 @@ const addcategory = async (request, response) => {
           department: department,
           services,
           features,
-          created_date: istDate,
+          created_date: datetime,
         },
       });
 
@@ -809,7 +795,7 @@ const addcategory = async (request, response) => {
           department,
           services,
           features,
-          modified_date: istDate,
+          modified_date: datetime,
         },
       });
       if (update) {
@@ -821,7 +807,9 @@ const addcategory = async (request, response) => {
       }
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in admin-addcategory API`);
+    logger.error(
+      `Internal server error: ${error.message} in admin-addcategory API`
+    );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -832,7 +820,6 @@ const addcategory = async (request, response) => {
 const get_category = async (request, response) => {
   try {
     const get = await prisma.categoryManager.findMany();
-    // console.log({ get });
     if (get.length > 0) {
       const groupedData = get.reduce((acc, item) => {
         if (!acc[item.type]) {
@@ -879,7 +866,9 @@ const get_category = async (request, response) => {
       });
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in admin-get_category API`);
+    logger.error(
+      `Internal server error: ${error.message} in admin-get_category API`
+    );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -917,7 +906,7 @@ const getAllTypesAndCategories = async (request, response) => {
     const laboratoryFeatures = laboratory?.features;
     const laboratoryServices = laboratory?.services;
     const hospitalFeatures = hospital?.features;
-
+    logger.info(`checkinggg`);
     response.status(200).json({
       success: true,
       error: false,
@@ -1058,9 +1047,7 @@ const alltypefeedback = async (request, response) => {
 
 const feedbackapproval = async (req, res) => {
   const { id, status, type } = req.body;
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     if (!id || !status || !type) {
@@ -1074,17 +1061,17 @@ const feedbackapproval = async (req, res) => {
     if (type === "Doctor") {
       updatedFeedback = await prisma.doctor_feedback.update({
         where: { id: id },
-        data: { status: status, modified_date: istDate },
+        data: { status: status, modified_date: datetime },
       });
     } else if (type === "Lab") {
       updatedFeedback = await prisma.lab_feedback.update({
         where: { id: id },
-        data: { status: status, modified_date: istDate },
+        data: { status: status, modified_date: datetime },
       });
     } else if (type === "Hospital") {
       updatedFeedback = await prisma.hospital_feedback.update({
         where: { id: id },
-        data: { status: status, modified_date: istDate },
+        data: { status: status, modified_date: datetime },
       });
     } else {
       return res.status(400).json({
@@ -1229,7 +1216,9 @@ const totalCount = async (request, response) => {
       });
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in admin-totalCount API`);
+    logger.error(
+      `Internal server error: ${error.message} in admin-totalCount API`
+    );
     console.error(error);
     return response.status(500).json({
       error: true,
@@ -1242,6 +1231,7 @@ const totalCount = async (request, response) => {
 
 const messagesave = async (request, response) => {
   console.log("heyy", request.body);
+  const datetime = getCurrentDateInIST();
   try {
     const { name, contact_number, type } = request.body;
     // const mobileNumber = contact_number;
@@ -1288,7 +1278,7 @@ const messagesave = async (request, response) => {
         data: {
           name: name,
           contact_no: contact_number.toString(),
-          created_date: istDate,
+          created_date: datetime,
           type: type,
         },
       });
@@ -1305,7 +1295,9 @@ const messagesave = async (request, response) => {
       }
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in admin-messagesave api`);
+    logger.error(
+      `Internal server error: ${error.message} in admin-messagesave api`
+    );
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -1363,24 +1355,28 @@ const getalldatas = async (request, response) => {
           id: true,
           name: true,
           pincode: true,
-          email:true,
+          email: true,
           specialization: true,
           datetime: true,
           status: true,
           phone_no: true,
           registration_no: true,
           interacteduser: true,
-          phone_office:true,
-          education_qualification:true,
-          sector:true,
-          about:true,
-          type:true
+          phone_office: true,
+          education_qualification: true,
+          sector: true,
+          about: true,
+          type: true,
         },
       });
-    
+
       const complete_data = decrypted_data.map((doctor) => {
-        const consult_count = doctor.interacteduser.filter(interaction => interaction.consultcount).length;
-        const view_count = doctor.interacteduser.filter(interaction => interaction.viewcount).length;
+        const consult_count = doctor.interacteduser.filter(
+          (interaction) => interaction.consultcount
+        ).length;
+        const view_count = doctor.interacteduser.filter(
+          (interaction) => interaction.viewcount
+        ).length;
         return {
           ...doctor,
           email: safeDecrypt(doctor.email, secretKey),
@@ -1388,7 +1384,6 @@ const getalldatas = async (request, response) => {
           registration_no: safeDecrypt(doctor.registration_no, secretKey),
           consult_count,
           view_count,
-          
         };
       });
 
@@ -1408,26 +1403,29 @@ const getalldatas = async (request, response) => {
           name: true,
           pincode: true,
           speciality: true,
-          type:true,
-          email:true,
-          feature:true,
+          type: true,
+          email: true,
+          feature: true,
           datetime: true,
-          about:true,
+          about: true,
           status: true,
           contact_no: true,
           interacteduser: true,
-          photo:true
+          photo: true,
         },
       });
       if (decrypted_data.length > 0) {
         const complete_data = decrypted_data.map((hospital) => {
-          const consult_count = hospital.interacteduser.filter(interaction => interaction.consultcount).length;
-          const view_count = hospital.interacteduser.filter(interaction => interaction.viewcount).length;
+          const consult_count = hospital.interacteduser.filter(
+            (interaction) => interaction.consultcount
+          ).length;
+          const view_count = hospital.interacteduser.filter(
+            (interaction) => interaction.viewcount
+          ).length;
           return {
             ...hospital,
             consult_count,
             view_count,
-            
           };
         });
         response.status(200).json({
@@ -1449,26 +1447,30 @@ const getalldatas = async (request, response) => {
           id: true,
           name: true,
           pincode: true,
-          services:true,
-          features:true,
+          services: true,
+          features: true,
           datetime: true,
           status: true,
           phone_no: true,
-          address:true,
+          address: true,
           interacteduser: true,
-          about:true,
-          email:true,
-          timing:true
+          about: true,
+          email: true,
+          timing: true,
         },
       });
       if (decrypted_data.length > 0) {
         const complete_data = decrypted_data.map((lab) => {
-          const consult_count = lab.interacteduser.filter(interaction => interaction.consultcount).length;
-          const view_count = lab.interacteduser.filter(interaction => interaction.viewcount).length;
+          const consult_count = lab.interacteduser.filter(
+            (interaction) => interaction.consultcount
+          ).length;
+          const view_count = lab.interacteduser.filter(
+            (interaction) => interaction.viewcount
+          ).length;
           return {
             ...lab,
             consult_count,
-            view_count,            
+            view_count,
           };
         });
         response.status(200).json({
@@ -1492,8 +1494,6 @@ const getalldatas = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
-
 
 module.exports = {
   addcategory,

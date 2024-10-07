@@ -1,35 +1,14 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const {
+  encrypt,
+  getCurrentDateInIST,
+  decrypt,
+  istDate,
+  logger,
+  prisma,
+} = require("../../utils");
 const bcrypt = require("bcrypt");
-const { encrypt, decrypt } = require("../../utils");
 require("dotenv").config();
 const nodemailer = require("nodemailer");
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-
-const winston = require("winston");
-const fs = require("fs");
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 
 const doctor_registration = async (req, res) => {
   const {
@@ -56,6 +35,7 @@ const doctor_registration = async (req, res) => {
     expert_opinion,
     video_consultaion,
   } = JSON.parse(req.body.data);
+  const datetime = getCurrentDateInIST();
   const secretKey = process.env.ENCRYPTION_KEY;
   const dr_imageLink = req.file?.location;
   const safeDecrypt = (text, key) => {
@@ -66,25 +46,6 @@ const doctor_registration = async (req, res) => {
     }
   };
   try {
-    //    let doctorImage = {}
-
-    //      for(i=0; i<dr_imageLink.length; i++){
-    //         let keyName  = `image${i+1}`
-
-    //         doctorImage[keyName] = dr_imageLink[i].location
-    //      }
-
-    //for encrypting the phone,email and registration_no
-    // const encryptData = (data) => {
-    //     const cipher = crypto.createCipher('aes-256-cbc', encryptionKey);
-    //     let encryptedData = cipher.update(data, 'utf-8', 'hex');
-    //     encryptedData += cipher.final('hex');
-    //     return encryptedData;
-    // };
-
-    // const encryptedPhone = encryptData(phone)
-    // const encryptedEmail = encryptData(email)
-    // const encryptedRegistration_no = encryptData(registration_no)
     const is_query = query ? query : false;
     const is_expert_opinion = expert_opinion ? expert_opinion : false;
     const is_video_consultaion = video_consultaion ? video_consultaion : false;
@@ -214,7 +175,7 @@ const doctor_registration = async (req, res) => {
         experience: parseInt(experience),
         about: about,
         registration_no: encryptedRegistrationNo,
-        datetime: istDate,
+        datetime: datetime,
         pincode: parseInt(pincode),
         sector: sector,
         phone_office: phone_office,
@@ -230,7 +191,7 @@ const doctor_registration = async (req, res) => {
         category: "Doctor",
         read: "N",
         text: "Your profile has been successfully registered",
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     res.status(200).json({
@@ -495,6 +456,7 @@ const edit_doctor = async (req, res) => {
   try {
     const { doctor_id, about } = req.body;
     const dr_imageLink = req.file?.location;
+    const datetime = getCurrentDateInIST();
     if (!doctor_id) {
       return res.status(400).json({
         message: "error",
@@ -508,7 +470,7 @@ const edit_doctor = async (req, res) => {
       data: {
         image: dr_imageLink,
         about: about,
-        updatedDate: istDate,
+        updatedDate: datetime,
       },
     });
     res.status(200).json({
@@ -559,6 +521,7 @@ const delete_doctor = async (req, res) => {
 const consultation_data = async (req, res) => {
   try {
     const { id, timing, days, consultation_fees } = req.body;
+    const datetime = getCurrentDateInIST();
     const add_data = await prisma.doctor_hospital.update({
       where: {
         id: id, //doctor_hospital table id
@@ -567,7 +530,7 @@ const consultation_data = async (req, res) => {
         timing: timing,
         days: days,
         consultation_fees: consultation_fees,
-        updated_date: istDate,
+        updated_date: datetime,
       },
     });
     res.status(200).json({
@@ -591,6 +554,7 @@ const consultation_data = async (req, res) => {
 const edit_consultationDetails = async (req, res) => {
   try {
     const { id, timing, days, consultation_fees } = req.body;
+    const datetime = getCurrentDateInIST();
     const edited_consultation = await prisma.doctor_hospital.update({
       where: {
         id: id,
@@ -599,7 +563,7 @@ const edit_consultationDetails = async (req, res) => {
         timing: timing,
         days: days,
         consultation_fees: consultation_fees,
-        updated_date: istDate,
+        updated_date: datetime,
       },
     });
 
@@ -1010,6 +974,7 @@ const reset_password = async (req, res) => {
 const doctor_feedback = async (req, res) => {
   try {
     const { user_id, doctor_id, message, rating, interactedid } = req.body;
+    const datetime = getCurrentDateInIST();
     const status = "requested";
     if (!user_id || !doctor_id) {
       return res.status(400).json({
@@ -1023,7 +988,7 @@ const doctor_feedback = async (req, res) => {
       },
       data: {
         status: "Y",
-        st_modifiedDate: istDate,
+        st_modifiedDate: datetime,
       },
     });
 
@@ -1034,7 +999,7 @@ const doctor_feedback = async (req, res) => {
         message,
         rating,
         status: status,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     if (create) {
@@ -1058,7 +1023,7 @@ const doctor_feedback = async (req, res) => {
 const doctor_searchdata = async (req, res) => {
   try {
     const { user_id, speciality, type } = req.body;
-
+    const datetime = getCurrentDateInIST();
     // Input validation: check if at least speciality or type is provided
     if (!speciality && !type) {
       return res.status(400).json({
@@ -1072,7 +1037,7 @@ const doctor_searchdata = async (req, res) => {
         user_id: user_id || null,
         speciality,
         type,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     if (create) {
@@ -1207,9 +1172,7 @@ const getadoctorfeedback = async (req, res) => {
 const doctor_disable = async (request, response) => {
   try {
     const { id, type, status } = request.body;
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     if (id && status) {
       const disable = await prisma.doctor_details.update({
         where: {
@@ -1217,7 +1180,7 @@ const doctor_disable = async (request, response) => {
         },
         data: {
           status: status,
-          updatedDate: istDate,
+          updatedDate: datetime,
         },
       });
       let newstatus;
@@ -1233,7 +1196,7 @@ const doctor_disable = async (request, response) => {
       });
     } else if ((type = "all")) {
       // Calculate the date 6 months ago
-      const sixMonthsAgo = new Date(istDate);
+      const sixMonthsAgo = new Date(datetime);
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
       const inactiveDoctors = await prisma.doctor_details.findMany({
         where: {
@@ -1297,9 +1260,7 @@ const getunapprovedrs = async (request, response) => {
 const approvedr = async (request, response) => {
   try {
     const { id, status } = request.body;
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
 
     if (!id) {
       return response.status(400).json({ message: "Doctor ID is required." });
@@ -1311,7 +1272,7 @@ const approvedr = async (request, response) => {
 
     const doctor = await prisma.doctor_details.update({
       where: { id: id },
-      data: { status: status, updatedDate: istDate },
+      data: { status: status, updatedDate: datetime },
     });
 
     if (doctor) {
@@ -1346,9 +1307,7 @@ const completeedit = async (req, res) => {
     }
   };
 
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     const {
@@ -1505,7 +1464,7 @@ const completeedit = async (req, res) => {
       pincode: checkChanges("pincode", intpincode),
       sector: checkChanges("sector", sector),
       phone_office: checkChanges("phone_office", phone_office),
-      updatedDate: istDate,
+      updatedDate: datetime,
     };
 
     // Remove undefined fields from updateData
@@ -1526,7 +1485,7 @@ const completeedit = async (req, res) => {
           type: "Doctor",
           read: "N",
           text: text,
-          created_date: istDate,
+          created_date: datetime,
         },
       });
       return res.status(200).json({

@@ -1,31 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-const bcrypt = require("bcrypt");
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-const winston = require("winston");
-const fs = require("fs");
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
+const { getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
 
 const getadm_notification = async (request, response) => {
   const usertype = request.body.userType;
@@ -58,14 +31,11 @@ const getadm_notification = async (request, response) => {
 
 const adm_read_notification = async (request, response) => {
   const usertype = request.body.type;
+  const datetime = getCurrentDateInIST();
   console.log("adm_read_notification");
   try {
     if (usertype === "SU" || usertype === "ADM") {
-      console.log("notifff", request.body);
       const id = request.body.id;
-      const currentDate = new Date();
-      const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-      const istDate = new Date(currentDate.getTime() + istOffset);
       if (id) {
         const read_notification = await prisma.adm_notification.update({
           where: {
@@ -73,7 +43,7 @@ const adm_read_notification = async (request, response) => {
           },
           data: {
             read: "Y",
-            modified_date: istDate,
+            modified_date: datetime,
           },
         });
         console.log({ read_notification });
@@ -100,9 +70,7 @@ const adm_read_notification = async (request, response) => {
 
 const add_notification = async (request, response) => {
   try {
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     const { text, user_id, type } = request.body;
     const add = await prisma.adm_notification.create({
       data: {
@@ -110,7 +78,7 @@ const add_notification = async (request, response) => {
         type: type,
         read: "N",
         text: text,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     if (add) {
@@ -129,9 +97,7 @@ const add_notification = async (request, response) => {
 
 const addtypenotification = async (request, response) => {
   try {
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     const { login_id, text, user_id, type, category } = request.body;
     const add = await prisma.type_notification.create({
       data: {
@@ -141,7 +107,7 @@ const addtypenotification = async (request, response) => {
         read: "N",
         text: text,
         created_by: login_id,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
     if (add) {
@@ -163,8 +129,8 @@ const gettype_notification = async (request, response) => {
   try {
     const type_notification = await prisma.type_notification.findMany({
       where: {
-        category:category,
-        receiver_id:user_id,
+        category: category,
+        receiver_id: user_id,
       },
       orderBy: [
         {
@@ -189,29 +155,26 @@ const gettype_notification = async (request, response) => {
 
 const typeread_notification = async (request, response) => {
   try {
-      const id = request.body.id;
-      const currentDate = new Date();
-      const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-      const istDate = new Date(currentDate.getTime() + istOffset);
-      if (id) {
-        const read_notification = await prisma.type_notification.update({
-          where: {
-            id: id,
-          },
-          data: {
-            read: "Y",
-            modified_date: istDate,
-          },
+    const id = request.body.id;
+    const datetime = getCurrentDateInIST();
+    if (id) {
+      const read_notification = await prisma.type_notification.update({
+        where: {
+          id: id,
+        },
+        data: {
+          read: "Y",
+          modified_date: datetime,
+        },
+      });
+      console.log({ read_notification });
+      if (read_notification) {
+        return response.status(200).json({
+          message: "success",
+          success: true,
         });
-        console.log({ read_notification });
-        if (read_notification) {
-          return response.status(200).json({
-            message: "success",
-            success: true,
-          });
-        }
       }
-   
+    }
   } catch (error) {
     logger.error(`Internal server error- in typeread_notification api`);
     response.status(500).json({ error: "Internal server error" });
@@ -226,5 +189,5 @@ module.exports = {
   add_notification,
   addtypenotification,
   gettype_notification,
-  typeread_notification
+  typeread_notification,
 };

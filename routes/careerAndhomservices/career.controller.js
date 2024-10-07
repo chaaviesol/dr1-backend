@@ -1,12 +1,8 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-
+const { getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
 require("dotenv").config();
 
 const careerupload = async (request, response) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     const {
@@ -63,7 +59,7 @@ const careerupload = async (request, response) => {
         type,
         status,
         department,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
 
@@ -108,12 +104,8 @@ const getcareerrequest = async (request, response) => {
   }
 };
 
-
-
 const homeserviceupload = async (request, response) => {
-  const currentDate = new Date();
-  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-  const istDate = new Date(currentDate.getTime() + istOffset);
+  const datetime = getCurrentDateInIST();
 
   try {
     const {
@@ -126,7 +118,7 @@ const homeserviceupload = async (request, response) => {
       type,
       status,
       department,
-      pincode
+      pincode,
     } = request.body;
 
     // Check if required fields are present
@@ -174,7 +166,7 @@ const homeserviceupload = async (request, response) => {
         type,
         status,
         department,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
 
@@ -196,27 +188,32 @@ const homeserviceupload = async (request, response) => {
 };
 
 const homeservicerequests = async (request, response) => {
-    try {
-      const getall = await prisma.home_services.findMany();
-      if (getall.length > 0) {
-        return response.status(200).json({
-          data: getall,
-          success: true,
-        });
-      } else {
-        return response.status(400).json({
-          message: "No Data",
-          error: true,
-        });
-      }
-    } catch (error) {
-      logger.error(
-        `Internal server error: ${error.message} in career-homeservicerequests API`
-      );
-      response.status(500).json({ message: "An error occurred", error: true });
-    } finally {
-      await prisma.$disconnect();
+  try {
+    const getall = await prisma.home_services.findMany();
+    if (getall.length > 0) {
+      return response.status(200).json({
+        data: getall,
+        success: true,
+      });
+    } else {
+      return response.status(400).json({
+        message: "No Data",
+        error: true,
+      });
     }
-  };
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in career-homeservicerequests API`
+    );
+    response.status(500).json({ message: "An error occurred", error: true });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
-module.exports = { careerupload, getcareerrequest, homeserviceupload,homeservicerequests };
+module.exports = {
+  careerupload,
+  getcareerrequest,
+  homeserviceupload,
+  homeservicerequests,
+};

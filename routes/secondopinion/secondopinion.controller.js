@@ -1,48 +1,15 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-const { encrypt, decrypt } = require("../../utils");
-const moment = require("moment-timezone");
-
-require("dotenv").config();
 const {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} = require("@google/generative-ai");
+  decrypt,
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+} = require("../../utils");
 require("dotenv").config();
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-const winston = require("winston");
-const fs = require("fs");
-
-//Configure the Winston logger
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
 
 const addreport = async (request, response) => {
-  console.log("Request Body:", request.body);
-
   try {
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     const user_id = request.user.userId;
     const { department, contact_no, patient_name, doctor_name, remarks } =
       request.body;
@@ -99,7 +66,7 @@ const addreport = async (request, response) => {
         alternative_number: contact_no,
         remarks: remarks,
         user_id,
-        created_date: istDate,
+        created_date: datetime,
         status: "submitted",
       },
     });
@@ -420,9 +387,7 @@ const alluserqueries = async (request, response) => {
 const addquery = async (request, response) => {
   console.log("Request Body:", request.body);
   try {
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     const usertype = request.user.userType;
     const user_id = request.user.userId;
     if (!user_id) {
@@ -452,7 +417,7 @@ const addquery = async (request, response) => {
         department,
         query,
         user_id,
-        created_date: istDate,
+        created_date: datetime,
         status: "requested",
       },
     });
@@ -696,6 +661,7 @@ const getallqueries = async (request, response) => {
 const queryupdate = async (request, response) => {
   console.log("queryupppppppppp", request.body);
   const { id, doctor_remarksid, status } = request.body;
+  const datetime = getCurrentDateInIST();
   try {
     if (!id || !doctor_remarksid) {
       return response.status(400).json({
@@ -710,7 +676,7 @@ const queryupdate = async (request, response) => {
       data: {
         doctor_remarksid,
         // status,
-        updated_date: istDate,
+        updated_date: datetime,
       },
     });
     console.log({ allrequestedquery });
@@ -732,6 +698,7 @@ const queryupdate = async (request, response) => {
 
 const querycomplete = async (request, response) => {
   console.log("querycomplete", request.body);
+  const datetime = getCurrentDateInIST();
   const { id, status } = request.body;
   try {
     if (!id || !status) {
@@ -746,7 +713,7 @@ const querycomplete = async (request, response) => {
       },
       data: {
         status,
-        updated_date: istDate,
+        updated_date: datetime,
       },
     });
     if (allrequestedquery) {
@@ -778,9 +745,7 @@ const adddocremarks = async (request, response) => {
     });
   }
   try {
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     const user_id = request.user.userId;
     const usertype = request.user.userType;
 
@@ -822,7 +787,7 @@ const adddocremarks = async (request, response) => {
         query_id: id,
         doctor_id: user_id,
         doctor_remarks,
-        created_date: istDate,
+        created_date: datetime,
       },
     });
 
@@ -834,7 +799,7 @@ const adddocremarks = async (request, response) => {
         data: {
           doctor_remarksid: newRemark.id,
           status,
-          updated_date: istDate,
+          updated_date: datetime,
         },
       });
     }
@@ -863,9 +828,7 @@ const editremarks = async (request, response) => {
     });
   }
   try {
-    const currentDate = new Date();
-    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-    const istDate = new Date(currentDate.getTime() + istOffset);
+    const datetime = getCurrentDateInIST();
     const user_id = request.user.userId;
     const usertype = request.user.userType;
 

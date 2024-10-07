@@ -1,33 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const { istDate, logger, prisma, decrypt } = require("../../utils");
 const bcrypt = require("bcrypt");
-const currentDate = new Date();
-const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-const istDate = new Date(currentDate.getTime() + istOffset);
-const { encrypt, decrypt } = require("../../utils");
-const winston = require("winston");
-const fs = require("fs");
-const { response } = require("express");
-const logDirectory = "./logs";
-if (!fs.existsSync(logDirectory)) {
-  fs.mkdirSync(logDirectory);
-}
-
-//Configure the Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({
-      filename: `${logDirectory}/error.log`,
-      level: "error",
-    }),
-    new winston.transports.File({ filename: `${logDirectory}/combined.log` }),
-  ],
-});
+require("dotenv").config();
 
 const addlab = async (req, response) => {
   try {
@@ -343,11 +316,9 @@ const getlab = async (request, response) => {
 };
 
 //details of a lab
-
 const getlabdetails = async (request, response) => {
   try {
     const { id } = request.body;
-
     if (!id) {
       return response.status(400).json({
         success: false,
