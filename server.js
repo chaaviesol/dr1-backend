@@ -19,6 +19,7 @@ const ChatbotRouter = require("./routes/chatbot/chatbot.routes");
 const OpinionRouter = require("./routes/secondopinion/secondopinion.routes");
 const productRouter = require("./routes/productcategory/productcategory.routes");
 const CareerRouter = require("./routes/careerAndhomservices/career.routes");
+const medoneRouter = require("./routes/medOne/medone.routes");
 
 server.use(
   cors({
@@ -43,6 +44,7 @@ server.use("/bot", ChatbotRouter);
 server.use("/secondop", OpinionRouter);
 server.use("/product", productRouter);
 server.use("/career",CareerRouter)
+server.use("/medone",medoneRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
