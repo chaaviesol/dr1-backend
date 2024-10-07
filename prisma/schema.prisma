@@ -516,12 +516,15 @@ model sales_invoice{
 model career{
   id                   Int          @id @default(autoincrement())
   name                 String?
+  type                 String?
   department           String?
+  specialization       String?
   experience           String?
   qualification        String?
-  preferred_location   String?
+  preferred_location   Json?
+  year_of_passout      String?
   phone_no             String?
-  type                 String?
+  gender               String?
   status               String?      
   created_date         DateTime?    
 }

@@ -9,6 +9,9 @@ const careerupload = async (request, response) => {
       name,
       phone_no,
       preferred_location,
+      specialization,
+      year_of_passout,
+      gender,
       qualification,
       experience,
       type,
@@ -17,44 +20,42 @@ const careerupload = async (request, response) => {
     } = request.body;
 
     // Check if required fields are present
-    if (!name || !phone_no || !address || !email || !pincode) {
+    if (
+      !name ||
+      !phone_no ||
+      !preferred_location ||
+      !qualification ||
+      !gender ||
+      !type ||
+      !year_of_passout
+    ) {
       return response.status(400).json({
         message: "Required fields can't be null",
         error: true,
       });
     }
 
-    // // Check if email already exists
-    // const checkEmail = await prisma.career.findFirst({
-    //   where: { email },
-    // });
-
     // Check if phone number already exists
     const checkPhoneNumber = await prisma.career.findFirst({
-      where: { phone_no },
+      where: { name: name, phone_no: phone_no, qualification: qualification },
     });
-
-    // if (checkEmail) {
-    //   return response.status(400).json({
-    //     message: "Email ID already exists",
-    //     error: true,
-    //   });
-    // }
 
     if (checkPhoneNumber) {
       return response.status(400).json({
-        message: "Phone number already exists",
+        message: "Already Submitted",
         error: true,
       });
     }
 
-    // Create a new pharmacy record
     const create = await prisma.career.create({
       data: {
         name,
         phone_no,
         preferred_location,
         qualification,
+        specialization,
+        year_of_passout,
+        gender,
         experience,
         type,
         status,
