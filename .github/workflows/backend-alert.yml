@@ -23,7 +23,7 @@ jobs:
         run: |
           STATUS=$(cat status.txt)
           if [[ "$STATUS" == "SUCCESS" ]]; then
-            MESSAGE="🎉 *Build Succeeded* \n*Stage*: Build and Deploy React to S3 \n*Status*: Success"
+            MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success"
           else
             JOB_NAME=${{ github.event.workflow_run.jobs[0].name }}
             ERROR_MESSAGE=$(cat $GITHUB_WORKSPACE/error.log || echo "No error log available")
