@@ -531,12 +531,7 @@ model career{
 
 model home_services{
   id                   Int          @id @default(autoincrement())
-  name                 String?
-  department           String?
-  start_date           DateTime?
-  end_date             DateTime?
-  address              String?
-  pincode              String?
+  name                 String?  
   phone_no             String?
   type                 String?
   status               String?      

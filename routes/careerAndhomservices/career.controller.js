@@ -109,47 +109,12 @@ const homeserviceupload = async (request, response) => {
   const datetime = getCurrentDateInIST();
 
   try {
-    const {
-      name,
-      phone_no,
-      address,
-      start_date,
-      end_date,
-      experience,
-      type,
-      status,
-      department,
-      pincode,
-    } = request.body;
+    const { name, phone_no, type, status } = request.body;
 
     // Check if required fields are present
-    if (!name || !phone_no || !address || !department || !pincode) {
+    if (!name || !phone_no) {
       return response.status(400).json({
         message: "Required fields can't be null",
-        error: true,
-      });
-    }
-
-    // // Check if email already exists
-    // const checkEmail = await prisma.career.findFirst({
-    //   where: { email },
-    // });
-
-    // Check if phone number already exists
-    const checkPhoneNumber = await prisma.home_services.findFirst({
-      where: { phone_no },
-    });
-
-    // if (checkEmail) {
-    //   return response.status(400).json({
-    //     message: "Email ID already exists",
-    //     error: true,
-    //   });
-    // }
-
-    if (checkPhoneNumber) {
-      return response.status(400).json({
-        message: "Phone number already exists",
         error: true,
       });
     }
@@ -159,14 +124,8 @@ const homeserviceupload = async (request, response) => {
       data: {
         name,
         phone_no,
-        preferred_location,
-        qualification,
-        experience,
-        start_date,
-        end_date,
         type,
         status,
-        department,
         created_date: datetime,
       },
     });
@@ -180,7 +139,7 @@ const homeserviceupload = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in career-careerupload API`
+      `Internal server error: ${error.message} in career-homeserviceupload API`
     );
     response.status(500).json({ message: "An error occurred", error: true });
   } finally {
