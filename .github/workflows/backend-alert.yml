@@ -1,0 +1,45 @@
+name: Notify on Pipeline Completion
+
+on:
+  workflow_run:
+    workflows: ["Deploy Backend Application"]
+    types:
+      - completed
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Job Status
+        run: |
+          if [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            echo "SUCCESS" > status.txt
+          else
+            echo "FAILURE" > status.txt
+          fi
+
+      - name: Send Telegram Notification
+        run: |
+          STATUS=$(cat status.txt)
+          if [[ "$STATUS" == "SUCCESS" ]]; then
+            MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success"
+          else
+            JOB_NAME=${{ github.event.workflow_run.jobs[0].name }}
+            ERROR_MESSAGE=$(cat $GITHUB_WORKSPACE/error.log || echo "No error log available")
+            MESSAGE="🚨 *Build Failed* \n*Stage*: $JOB_NAME \n*Status*: Failure \n*Error*: \n\`\`\`$ERROR_MESSAGE\`\`\`"
+          fi
+
+          IFS=',' read -ra CHAT_IDS <<< "${{ secrets.TELEGRAM_CHAT_IDS }}"
+          for CHAT_ID in "${CHAT_IDS[@]}"; do
+            curl -s --data "chat_id=$CHAT_ID" \
+            --data-urlencode "text=$MESSAGE" \
+            --data "parse_mode=Markdown" \
+            --data "disable_web_page_preview=true" \
+            https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
+          done
+
+      - name: Extract Error Log (if failed)
+        if: ${{ failure() }}
+        run: |
+          tail -n 100 $GITHUB_WORKSPACE/error.log > $GITHUB_WORKSPACE/error.log || echo "No error log found"
