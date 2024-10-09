@@ -137,6 +137,11 @@ const getcategory = async (request, response) => {
       orderBy: {
         category: "asc",
       },
+      select:{
+        id:true,
+        category:true,
+        image:true
+      }
     });
     if (get.length > 0) {
       return response.status(200).json({

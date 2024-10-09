@@ -478,8 +478,7 @@ model doctor_remarks{
 
 model productcategory{
   id                     Int                      @id @default(autoincrement()) 
-  category               String?
-  subcategory            String?                  
+  category               String?                 
   image                  String?
   status                 Boolean?
   created_date           DateTime?
