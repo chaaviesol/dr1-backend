@@ -514,7 +514,7 @@ model sales_invoice{
 
 model career{
   id                   Int          @id @default(autoincrement())
-  new_name              String?
+  name                 String?
   type                 String?
   department           String?
   specialization       String?
