@@ -2,10 +2,11 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { encrypt, decrypt } = require("../../utils");
 const winston = require("winston");
+const { request, response } = require("express");
 const logDirectory = "./logs";
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { use } = require("bcrypt/promises");
+// const { use } = require("bcrypt/promises");
 
 const logger = winston.createLogger({
     level: "info",
@@ -102,7 +103,7 @@ const addUserData = async(request,response)=>{
             error:true,
             success:false,
         });
-        logger.error(`Internal server error: ${error.message} in admin-addadmin api`);
+        logger.error(`Internal server error: ${error.message} in medone-addUserData api`);
       } finally {
         await prisma.$disconnect();
       }
@@ -110,175 +111,6 @@ const addUserData = async(request,response)=>{
 
 
 
-
-// const userLogin = async (request, response) => {
-//   console.log("userloginnnn");
-//   const { email, password } = request.body;
-//   const safeDecrypt = (text, key) => {
-//     try {
-//       return decrypt(text, key);
-//     } catch (err) {
-//       return text;
-//     }
-//   };
-//   const secretKey = process.env.ENCRYPTION_KEY;
-//   const currentDate = new Date();
-//   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-//   const istDate = new Date(currentDate.getTime() + istOffset);
-
-//   if (!email || !password) {
-//     return response.status(401).json({
-//       error: true,
-//       success: false,
-//       message: "Email and password are required",
-//     });
-//   }
-
-//   try {
-//     const emaillower = email.toLowerCase();
-//     const email_id = emaillower;
-//     if (validateEmail(email_id)) {
-//       console.log("Valid email address");
-//     } else {
-//       console.log("Invalid email address");
-//       const resptext = "Invalid email address";
-//       return response.status(401).json({
-//         error: true,
-//         success: false,
-//         message: resptext,
-//       });
-//     }
-//     function validateEmail(email_id) {
-//       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-//       return emailRegex.test(email_id);
-//     }
-//     const users = await prisma.user_details.findMany();
-//     let user = null;
-
-//     for (const dbUser of users) {
-//       let decryptedEmail;
-//       try {
-//         decryptedEmail = safeDecrypt(dbUser.email, secretKey);
-//       } catch (error) {
-//         console.warn(
-//           `Skipping user ID ${dbUser.id} due to decryption error`,
-//           error
-//         );
-//         continue;
-//       }
-
-//       if (decryptedEmail === emaillower) {
-//         user = dbUser;
-//         break;
-//       }
-//     }
-
-//     if (!user) {
-//       return response.status(401).json({
-//         error: true,
-//         success: false,
-//         message: "User does not exist",
-//       });
-//     }
-
-//     const logged_id = user.id;
-//     // const userType = "customer";
-//     const hashedDbPassword = user.password;
-
-//     // Compare the provided password with the hashed password from the database
-//     bcrypt.compare(password, hashedDbPassword, async (error, result) => {
-//       if (error) {
-//         return response.status(500).json({
-//           error: true,
-//           success: false,
-//           message: "Password hashing error",
-//         });
-//       }
-
-//       if (!result) {
-//         return response.status(401).json({
-//           error: true,
-//           success: false,
-//           message: "Please check your password!",
-//         });
-//       }
-
-//       const userData = await prisma.user_details.findMany({
-//         where:{
-//            id:logged_id
-//         }
-//       })
-//       console.log({userData})
-
-//      const decryptname = safeDecrypt(userData.name, secretKey)
-//      const decryptgender = safeDecrypt(userData.gender , secretKey)
-//      const decryptageGroup = safeDecrypt(userData.ageGroup, secretKey)
-
-//      userData.name = decryptname;
-//      userData.gender = decryptgender;
-//      userData.ageGroup = decryptageGroup
-
-
-
-//       const refreshTokenPayload = {
-//         userId: logged_id,
-//         // userType,
-//       };
-
-//       const accessTokenPayload = {
-//         userId: logged_id,
-//         // userType,
-//       };
-
-//       const refreshTokenOptions = {
-//         expiresIn: "900m",
-//       };
-
-//       const accessTokenOptions = {
-//         expiresIn: "100m",
-//       };
-
-//       const refreshToken = jwt.sign(
-//         refreshTokenPayload,
-//         process.env.REFRESH_TOKEN_SECRET,
-//         refreshTokenOptions
-//       );
-
-//       const accessToken = jwt.sign(
-//         accessTokenPayload,
-//         process.env.ACCESS_TOKEN_SECRET,
-//         accessTokenOptions
-//       );
-
-//       await prisma.user_details.update({
-//         where: { id: logged_id },
-//         data: { last_active: istDate },
-//       });
-
-//       return response.status(200).json({
-//         success: true,
-//         error: false,
-//         message: "Login successful----testinggggggggg", //message: "Login successful
-//         refreshToken,
-//         accessToken,
-//         userId: logged_id,
-//         // userType,
-//         userData
-//       });
-//     });
-//   } catch (error) {
-//     console.log({error})
-//     logger.error(`Internal server error: ${error.message} in userLogin API`);
-//     return response.status(500).json({
-//       error: true,
-//       success: false,
-//       message: "Internal Server Error!",
-//     });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
 
 const userLogin = async (request, response) => {
   console.log("userloginnnn");
@@ -372,7 +204,7 @@ const userLogin = async (request, response) => {
           message: "Please check your password!",
         });
       }
-
+      // console.log({logged_id})
       // Fetch user data after password verification
       const userDataArray = await prisma.user_details.findMany({
         where: { id: logged_id }
@@ -432,7 +264,26 @@ const userLogin = async (request, response) => {
         where: { id: logged_id },
         data: { last_active: istDate },
       });
-
+      console.log({logged_id})
+      //check whether there is data in dailyRoutine table
+      const findRoutine = await prisma.dailyRoutine.findMany({
+        where:{
+          userId:logged_id
+        }
+      })
+      console.log({findRoutine})
+      if(findRoutine.length === 0){
+        return response.status(200).json({
+          success: true,
+          error: false,
+          message: "Login successful",
+          refreshToken,
+          accessToken,
+          userId: logged_id,
+          userData, // Decrypted user data
+          routine:"false"
+        })
+      }
       // Return response with decrypted user data and tokens
       return response.status(200).json({
         success: true,
@@ -441,7 +292,8 @@ const userLogin = async (request, response) => {
         refreshToken,
         accessToken,
         userId: logged_id,
-        userData // Decrypted user data
+        userData, // Decrypted user data
+        routine:"true"
       });
     });
   } catch (error) {
@@ -459,10 +311,77 @@ const userLogin = async (request, response) => {
 
 
 
+const addRoutine = async(request,response)=>{
+  const currentDate = new Date();
+  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+  const istDate = new Date(currentDate.getTime() + istOffset);
+  try{
+    const {
+      userId,
+      routine 
+    } = request.body
+
+    const addRoutine = await prisma.dailyRoutine.create({
+     data:{
+        userId:userId,
+        routine:routine,
+        created_date:istDate
+     }
+    })  
+    console.log({addRoutine})
+
+    response.status(200).json({
+      error:"false",
+      success:"true",
+      message:"Successfully added the routine",
+      data:addRoutine
+    })
+  }catch (error) {
+    console.log({error})
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-addRoutine api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+
+}
+
+
+const getUserRoutine = async(request,response)=>{
+  try{
+    const{userId} = request.body
+
+    const getRoutine = await prisma.dailyRoutine.findMany({
+      where:{
+        userId:userId
+      }
+    })
+  console.log({getRoutine})
+  response.status(200).json({
+    error:false,
+    success:true,
+    message:"Successfull",
+    data:getRoutine
+  })
+  }catch (error) {
+    console.log({error})
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-getUserRoutine api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
+
+
+
 
 
 
 
 module.exports = {addUserData,
-  userLogin
+  userLogin,
+  addRoutine,
+  getUserRoutine
 }
