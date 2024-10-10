@@ -373,9 +373,123 @@ const getUserRoutine = async(request,response)=>{
 }
 
 
+const getMedicine = async(request,response)=>{
+  try{
+    const getmedicine = await prisma.generic_product.findMany({
+      where:{
+        is_active:"Y"
+      },
+      select:{
+        id:true,
+        name:true,
+        images:true,
+        category:true
+      }
+    })
+    console.log({getmedicine})
+    response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:getmedicine
+    })
+}catch (error) {
+  console.log({error})
+  response.status(500).json(error.message);
+  logger.error(`Internal server error: ${error.message} in medone-getmedicine api`);
+} finally {
+  await prisma.$disconnect();
+}
+}
 
 
+const addNewMedicine = async(request,response)=>{
+  try{
+    const currentDate = new Date();
+    const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+    const istDate = new Date(currentDate.getTime() + istOffset);
+      const {
+        name,
+        category,
+        userId
+      } = request.body
+      
+      const addMedicine = await prisma.medicines.create({
+        data:{
+          name:name,
+          status:"Pending",
+          created_date:istDate,
+          created_by:userId,
+          category:category
+        }
+      })
+      console.log({addMedicine})
+      response.status(200).json({
+        error:false,
+        success:true,
+        message:"Successfully added the medicine",
+        data:addMedicine
+      })
 
+  }catch (error) {
+    console.log({error})
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-addnewmedicine api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+const addMedicineSchedule = async(request,response)=>{
+  const currentDate = new Date();
+  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+  const istDate = new Date(currentDate.getTime() + istOffset);
+  try{
+    const{
+        userId,
+        medicine,
+        medicine_type,
+        image,
+        startDate,
+        no_of_days,
+        afterFd_beforeFd,
+        totalQuantity,
+        timing,
+        timeInterval,
+        takingQuantity
+    }=request.body
+
+    const addSchedule = await prisma.medicine_timetable.create({
+      data:{
+        userId:userId,
+        medicine:medicine,
+        medicine_type:medicine_type,
+        image:image,
+        startDate:startDate,
+        no_of_days:no_of_days,
+        afterFd_beforeFd:afterFd_beforeFd,
+        totalQuantity:totalQuantity,
+        timing:timing,
+        timeInterval:timeInterval,
+        takingQuantity:takingQuantity,
+        // created_date:istDate //change to dateTime
+      }
+    })
+   console.log({addSchedule})
+   response.status(200).json({
+    error:false,
+    success:true,
+    message:"Successfully added the schedule",
+    data:addSchedule
+   })
+  }catch (error) {
+    console.log({error})
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-addMedicineSchedule api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 
 
@@ -383,5 +497,8 @@ const getUserRoutine = async(request,response)=>{
 module.exports = {addUserData,
   userLogin,
   addRoutine,
-  getUserRoutine
+  getUserRoutine,
+  getMedicine,
+  addNewMedicine,
+  addMedicineSchedule
 }
