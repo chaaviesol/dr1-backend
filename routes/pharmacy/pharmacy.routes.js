@@ -20,6 +20,7 @@ const {
   createinvoice,
   getainvoice,
   prescriptioninvoice,
+  myorders,
 } = require("./pharmacy.controller");
 const PharmacyRouter = express.Router();
 const { upload } = require("../../middleware/Uploadimage");
@@ -45,6 +46,7 @@ PharmacyRouter.get("/prescriptionlist", presciptionsaleorders);
 PharmacyRouter.get("/allsalelist", allsalelistorders);
 PharmacyRouter.post("/checkaddress", auth, checkaddress);
 PharmacyRouter.post("/medicineadd", medicineadd);
+PharmacyRouter.get("/myorders", auth, myorders);
 ///////////////invoice///////////////////////////
 PharmacyRouter.post("/createinvoice", createinvoice);
 PharmacyRouter.post("/prescriptioninvoice", prescriptioninvoice);

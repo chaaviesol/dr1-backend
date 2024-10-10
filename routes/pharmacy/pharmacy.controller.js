@@ -1,4 +1,10 @@
-const { decrypt, getCurrentDateInIST,istDate, logger, prisma } = require("../../utils");
+const {
+  decrypt,
+  getCurrentDateInIST,
+  istDate,
+  logger,
+  prisma,
+} = require("../../utils");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
 
@@ -287,7 +293,7 @@ const disableproduct = async (request, response) => {
       },
       data: {
         is_active: "N",
-        updated_date:datetime
+        updated_date: datetime,
       },
     });
     if (allproducts) {
@@ -1177,6 +1183,33 @@ const myorders = async (request, response) => {
       },
       orderBy: {
         created_date: "desc",
+      },
+      select: {
+        sales_id: true,
+        so_number: true,
+        total_amount: true,
+        so_status: true,
+        order_type: true,
+        delivery_address: true,
+        created_date: true,
+        contact_no: true,
+        pincode: true,
+        sales_list: {
+          select: {
+            product_id: true,
+            order_qty: true,
+            net_amount: true,
+            generic_prodid: {
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                images: true,
+                mrp: true,
+              },
+            },
+          },
+        },
       },
     });
     if (salesorders.length > 0) {
