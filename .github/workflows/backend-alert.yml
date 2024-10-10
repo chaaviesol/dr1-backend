@@ -1,45 +1,48 @@
 name: Notify on Pipeline Completion
 
-on:
-  workflow_run:
-    workflows: ["Deploy Backend Application"]
-    types:
-      - completed
+inputs:
+  step_checkout_status:
+    description: "Checkout step status"
+    required: true
+  step_clone_repo_status:
+    description: "Clone Repo step status"
+    required: true
+  step_cleanup_status:
+    description: "Cleanup step status"
+    required: true
 
-jobs:
-  notify:
-    runs-on: ubuntu-latest
+runs:
+  using: "composite"
+  steps:
+    - name: Check Job Status
+      id: status
+      run: |
+        if [[ "${{ github.event.conclusion }}" == "success" ]]; then
+          echo "SUCCESS" > status.txt
+        else
+          echo "FAILURE" > status.txt
+        fi
 
-    steps:
-      - name: Check Job Status
-        run: |
-          if [[ "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
-            echo "SUCCESS" > status.txt
-          else
-            echo "FAILURE" > status.txt
-          fi
+    - name: Send Telegram Notification
+      run: |
+        STATUS=$(cat status.txt)
+        if [[ "$STATUS" == "SUCCESS" ]]; then
+          MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success \n\n"
+        else
+          ERROR_MESSAGE=$(tail -n 100 $GITHUB_WORKSPACE/error.log || echo "No error log available")
+          MESSAGE="🚨 *Build Failed* \n*Stage*: Deploy Backend \n*Status*: Failure \n*Error*: \n\`\`\`$ERROR_MESSAGE\`\`\`\n\n"
+        fi
 
-      - name: Send Telegram Notification
-        run: |
-          STATUS=$(cat status.txt)
-          if [[ "$STATUS" == "SUCCESS" ]]; then
-            MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success"
-          else
-            JOB_NAME=${{ github.event.workflow_run.jobs[0].name }}
-            ERROR_MESSAGE=$(cat $GITHUB_WORKSPACE/error.log || echo "No error log available")
-            MESSAGE="🚨 *Build Failed* \n*Stage*: $JOB_NAME \n*Status*: Failure \n*Error*: \n\`\`\`$ERROR_MESSAGE\`\`\`"
-          fi
+        MESSAGE+="*Step Statuses:* \n"
+        MESSAGE+="Checkout Step: ${{ inputs.step_checkout_status }}\n"
+        MESSAGE+="Clone Repo Step: ${{ inputs.step_clone_repo_status }}\n"
+        MESSAGE+="Cleanup Step: ${{ inputs.step_cleanup_status }}\n"
 
-          IFS=',' read -ra CHAT_IDS <<< "${{ secrets.TELEGRAM_CHAT_IDS }}"
-          for CHAT_ID in "${CHAT_IDS[@]}"; do
-            curl -s --data "chat_id=$CHAT_ID" \
-            --data-urlencode "text=$MESSAGE" \
-            --data "parse_mode=Markdown" \
-            --data "disable_web_page_preview=true" \
-            https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
-          done
-
-      - name: Extract Error Log (if failed)
-        if: ${{ failure() }}
-        run: |
-          tail -n 100 $GITHUB_WORKSPACE/error.log > $GITHUB_WORKSPACE/error.log || echo "No error log found"
+        IFS=',' read -ra CHAT_IDS <<< "${{ secrets.TELEGRAM_CHAT_IDS }}"
+        for CHAT_ID in "${CHAT_IDS[@]}"; do
+          curl -s --data "chat_id=$CHAT_ID" \
+          --data-urlencode "text=$MESSAGE" \
+          --data "parse_mode=Markdown" \
+          --data "disable_web_page_preview=true" \
+          https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
+        done
