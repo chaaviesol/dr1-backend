@@ -1,9 +1,9 @@
 name: Deploy Backend Application
 
 on:
- push:
-   branches:
-     - main
+  push:
+    branches:
+      - main
 
 jobs:
   deploy-backend:
@@ -12,9 +12,11 @@ jobs:
 
     steps:
     - name: Checkout Backend Code
+      id: checkout # Add ID to reference step status
       uses: actions/checkout@v3
 
     - name: Clone or Update Backend Repository on EC2
+      id: clone_repo # Add ID to reference step status
       env:
         SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
       run: |
@@ -34,5 +36,17 @@ jobs:
           npx prisma generate
           pm2 restart server.js
         EOF
+
     - name: Cleanup SSH Key
+      id: cleanup # Add ID to reference step status
       run: rm private-key.pem
+
+    - name: Notify on Completion
+      if: success() || failure()
+      uses: ./.github/actions/notify
+      with:
+        step_checkout_status: ${{ steps.checkout.outcome }}
+        step_clone_repo_status: ${{ steps.clone_repo.outcome }}
+        step_cleanup_status: ${{ steps.cleanup.outcome }}
+        telegram_chat_ids: ${{ secrets.TELEGRAM_CHAT_IDS }} # Pass Telegram secrets
+        telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}

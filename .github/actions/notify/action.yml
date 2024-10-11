@@ -1,0 +1,46 @@
+name: Notify on Completion
+description: Sends a Telegram message on job completion
+inputs:
+  step_checkout_status:
+    description: "Status of checkout step"
+    required: true
+  step_clone_repo_status:
+    description: "Status of clone_repo step"
+    required: true
+  step_cleanup_status:
+    description: "Status of cleanup step"
+    required: true
+  telegram_chat_ids:
+    description: "Telegram chat IDs"
+    required: true
+  telegram_bot_token:
+    description: "Telegram bot token"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check Job Status and Send Notification
+      shell: bash
+      run: |
+        # Retrieve input values
+        CHECKOUT_STATUS="${{ inputs.step_checkout_status }}"
+        CLONE_REPO_STATUS="${{ inputs.step_clone_repo_status }}"
+        CLEANUP_STATUS="${{ inputs.step_cleanup_status }}"
+
+        # Use printf for better formatting
+        if [[ "$CHECKOUT_STATUS" == "success" && "$CLONE_REPO_STATUS" == "success" && "$CLEANUP_STATUS" == "success" ]]; then
+          MESSAGE=$(printf "🎉 *Build Succeeded* \n\n*Checkout Step*: %s\n\n*Clone Repo Step*: %s\n\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
+        else
+          MESSAGE=$(printf "🚨 *Build Failed* \n\n*Checkout Step*: %s\n\n*Clone Repo Step*: %s\n\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
+        fi
+
+        # Send message to all specified chat IDs
+        IFS=',' read -ra CHAT_IDS <<< "${{ inputs.telegram_chat_ids }}"
+        for CHAT_ID in "${CHAT_IDS[@]}"; do
+          curl -s --data "chat_id=$CHAT_ID" \
+          --data-urlencode "text=$MESSAGE" \
+          --data "parse_mode=Markdown" \
+          --data "disable_web_page_preview=true" \
+          https://api.telegram.org/bot${{ inputs.telegram_bot_token }}/sendMessage
+        done
