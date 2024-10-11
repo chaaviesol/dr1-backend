@@ -20,12 +20,16 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check Job Status and Send Notification
-      shell: bash  # Added shell property
+    - name: Debug Notification Inputs
+      shell: bash
       run: |
         CHECKOUT_STATUS="${{ inputs.step_checkout_status }}"
         CLONE_REPO_STATUS="${{ inputs.step_clone_repo_status }}"
-        CLEANUP_STATUS="${{ inputs.step_cleanup_status }}"  # Make sure this is referenced properly
+        CLEANUP_STATUS="${{ inputs.step_cleanup_status }}"
+
+        echo "Checkout Status: $CHECKOUT_STATUS"
+        echo "Clone Repo Status: $CLONE_REPO_STATUS"
+        echo "Cleanup Status: $CLEANUP_STATUS"
 
         # Define the success and failure messages
         if [[ "$CHECKOUT_STATUS" == "success" && "$CLONE_REPO_STATUS" == "success" && "$CLEANUP_STATUS" == "success" ]]; then
