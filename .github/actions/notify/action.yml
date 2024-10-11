@@ -21,6 +21,7 @@ runs:
   using: "composite"
   steps:
     - name: Check Job Status and Send Notification
+      shell: bash  # Added shell property
       run: |
         CHECKOUT_STATUS="${{ inputs.step_checkout_status }}"
         CLONE_REPO_STATUS="${{ inputs.step_clone_repo_status }}"
