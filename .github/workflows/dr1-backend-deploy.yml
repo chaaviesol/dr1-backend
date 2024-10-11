@@ -48,3 +48,5 @@ jobs:
         step_checkout_status: ${{ steps.checkout.outcome }}
         step_clone_repo_status: ${{ steps.clone_repo.outcome }}
         step_cleanup_status: ${{ steps.cleanup.outcome }}
+        telegram_chat_ids: ${{ secrets.TELEGRAM_CHAT_IDS }} # Pass Telegram secrets
+        telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
