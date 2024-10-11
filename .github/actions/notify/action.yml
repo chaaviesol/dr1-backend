@@ -23,19 +23,12 @@ runs:
     - name: Check Job Status and Send Notification
       shell: bash
       run: |
-        # Set the statuses
-        CHECKOUT_STATUS="${{ inputs.step_checkout_status }}"
-        echo ""  # Print a blank line
-        CLONE_REPO_STATUS="${{ inputs.step_clone_repo_status }}"
-        echo ""  # Print a blank line
-        CLEANUP_STATUS="${{ inputs.step_cleanup_status }}"
-        echo ""  # Print a blank line
-
+        
         # Use printf for better formatting
         if [[ "$CHECKOUT_STATUS" == "success" && "$CLONE_REPO_STATUS" == "success" && "$CLEANUP_STATUS" == "success" ]]; then
-          MESSAGE=$(printf "🎉 *Build Succeeded* \n*Checkout Step*: %s\n*Clone Repo Step*: %s\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
+          MESSAGE=$(printf "🎉 *Build Succeeded* \n\n*Checkout Step*: %s\n\n*Clone Repo Step*: %s\n\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
         else
-          MESSAGE=$(printf "🚨 *Build Failed* \n*Checkout Step*: %s\n*Clone Repo Step*: %s\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
+          MESSAGE=$(printf "🚨 *Build Failed* \n\n*Checkout Step*: %s\n\n*Clone Repo Step*: %s\n\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
         fi
 
         # Send message to all specified chat IDs
