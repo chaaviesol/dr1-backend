@@ -1,21 +1,25 @@
 name: Notify on Pipeline Completion
+description: Sends Telegram notifications on workflow completion
 
 inputs:
   step_checkout_status:
-    description: "Checkout step status"
+    description: "Status of the checkout step"
     required: true
   step_clone_repo_status:
-    description: "Clone Repo step status"
+    description: "Status of the clone repository step"
     required: true
-  step_cleanup_status:
-    description: "Cleanup step status"
+  telegram_chat_ids:
+    description: "Telegram chat IDs"
+    required: true
+  telegram_bot_token:
+    description: "Telegram bot token"
     required: true
 
 runs:
   using: "composite"
   steps:
     - name: Check Job Status
-      id: status
+      shell: bash
       run: |
         if [[ "${{ github.event.conclusion }}" == "success" ]]; then
           echo "SUCCESS" > status.txt
@@ -24,25 +28,21 @@ runs:
         fi
 
     - name: Send Telegram Notification
+      shell: bash
       run: |
         STATUS=$(cat status.txt)
         if [[ "$STATUS" == "SUCCESS" ]]; then
-          MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success \n\n"
+          MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success"
         else
           ERROR_MESSAGE=$(tail -n 100 $GITHUB_WORKSPACE/error.log || echo "No error log available")
-          MESSAGE="🚨 *Build Failed* \n*Stage*: Deploy Backend \n*Status*: Failure \n*Error*: \n\`\`\`$ERROR_MESSAGE\`\`\`\n\n"
+          MESSAGE="🚨 *Build Failed* \n*Stage*: Deploy Backend \n*Status*: Failure \n*Error*: \n\`\`\`$ERROR_MESSAGE\`\`\`"
         fi
 
-        MESSAGE+="*Step Statuses:* \n"
-        MESSAGE+="Checkout Step: ${{ inputs.step_checkout_status }}\n"
-        MESSAGE+="Clone Repo Step: ${{ inputs.step_clone_repo_status }}\n"
-        MESSAGE+="Cleanup Step: ${{ inputs.step_cleanup_status }}\n"
-
-        IFS=',' read -ra CHAT_IDS <<< "${{ secrets.TELEGRAM_CHAT_IDS }}"
+        IFS=',' read -ra CHAT_IDS <<< "${{ inputs.telegram_chat_ids }}"
         for CHAT_ID in "${CHAT_IDS[@]}"; do
           curl -s --data "chat_id=$CHAT_ID" \
           --data-urlencode "text=$MESSAGE" \
           --data "parse_mode=Markdown" \
           --data "disable_web_page_preview=true" \
-          https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
+          https://api.telegram.org/bot${{ inputs.telegram_bot_token }}/sendMessage
         done
