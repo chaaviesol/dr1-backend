@@ -83,7 +83,11 @@ const careerupload = async (request, response) => {
 
 const getcareerrequest = async (request, response) => {
   try {
-    const getall = await prisma.career.findMany();
+    const getall = await prisma.career.findMany({
+      orderBy: {
+        created_date: "desc",
+      },
+    });
     if (getall.length > 0) {
       return response.status(200).json({
         data: getall,
@@ -107,12 +111,12 @@ const getcareerrequest = async (request, response) => {
 
 const homeserviceupload = async (request, response) => {
   const datetime = getCurrentDateInIST();
-
+  console.log(request.body);
   try {
     const { name, phone_no, type, status } = request.body;
 
     // Check if required fields are present
-    if (!name || !phone_no) {
+    if (!name || !phone_no || !type) {
       return response.status(400).json({
         message: "Required fields can't be null",
         error: true,
@@ -149,7 +153,11 @@ const homeserviceupload = async (request, response) => {
 
 const homeservicerequests = async (request, response) => {
   try {
-    const getall = await prisma.home_services.findMany();
+    const getall = await prisma.home_services.findMany({
+      orderBy: {
+        created_date: "desc",
+      },
+    });
     if (getall.length > 0) {
       return response.status(200).json({
         data: getall,
