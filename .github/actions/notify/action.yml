@@ -1,12 +1,14 @@
-name: Notify on Pipeline Completion
-description: Sends Telegram notifications on workflow completion
-
+name: Notify on Completion
+description: Sends a Telegram message on job completion
 inputs:
   step_checkout_status:
-    description: "Status of the checkout step"
+    description: "Status of checkout step"
     required: true
   step_clone_repo_status:
-    description: "Status of the clone repository step"
+    description: "Status of clone_repo step"
+    required: true
+  step_cleanup_status:
+    description: "Status of cleanup step"
     required: true
   telegram_chat_ids:
     description: "Telegram chat IDs"
@@ -18,24 +20,16 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check Job Status
-      shell: bash
+    - name: Check Job Status and Send Notification
       run: |
-        if [[ "${{ github.event.conclusion }}" == "success" ]]; then
-          echo "SUCCESS" > status.txt
-        else
-          echo "FAILURE" > status.txt
-        fi
+        CHECKOUT_STATUS="${{ inputs.step_checkout_status }}"
+        CLONE_REPO_STATUS="${{ inputs.step_clone_repo_status }}"
+        CLEANUP_STATUS="${{ inputs.step_cleanup_status }}"
 
-    - name: Send Telegram Notification
-      shell: bash
-      run: |
-        STATUS=$(cat status.txt)
-        if [[ "$STATUS" == "SUCCESS" ]]; then
-          MESSAGE="🎉 *Build Succeeded* \n*Stage*: Deployed backend application to EC2 \n*Status*: Success"
+        if [[ "$CHECKOUT_STATUS" == "success" && "$CLONE_REPO_STATUS" == "success" && "$CLEANUP_STATUS" == "success" ]]; then
+          MESSAGE="🎉 *Build Succeeded* \n*Checkout Step*: $CHECKOUT_STATUS \n*Clone Repo Step*: $CLONE_REPO_STATUS \n*Cleanup Step*: $CLEANUP_STATUS"
         else
-          ERROR_MESSAGE=$(tail -n 100 $GITHUB_WORKSPACE/error.log || echo "No error log available")
-          MESSAGE="🚨 *Build Failed* \n*Stage*: Deploy Backend \n*Status*: Failure \n*Error*: \n\`\`\`$ERROR_MESSAGE\`\`\`"
+          MESSAGE="🚨 *Build Failed* \n*Checkout Step*: $CHECKOUT_STATUS \n*Clone Repo Step*: $CLONE_REPO_STATUS \n*Cleanup Step*: $CLEANUP_STATUS"
         fi
 
         IFS=',' read -ra CHAT_IDS <<< "${{ inputs.telegram_chat_ids }}"
