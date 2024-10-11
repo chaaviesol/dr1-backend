@@ -33,10 +33,11 @@ runs:
 
         # Define the success and failure messages
         if [[ "$CHECKOUT_STATUS" == "success" && "$CLONE_REPO_STATUS" == "success" && "$CLEANUP_STATUS" == "success" ]]; then
-          MESSAGE="🎉 *Build Succeeded* \n*Checkout Step*: $CHECKOUT_STATUS \n*Clone Repo Step*: $CLONE_REPO_STATUS \n*Cleanup Step*: $CLEANUP_STATUS"
-        else
-          MESSAGE="🚨 *Build Failed* \n*Checkout Step*: $CHECKOUT_STATUS \n*Clone Repo Step*: $CLONE_REPO_STATUS \n*Cleanup Step*: $CLEANUP_STATUS"
-        fi
+  MESSAGE=$(printf "🎉 *Build Succeeded* \n*Checkout Step*: %s\n*Clone Repo Step*: %s\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
+else
+  MESSAGE=$(printf "🚨 *Build Failed* \n*Checkout Step*: %s\n*Clone Repo Step*: %s\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
+fi
+
 
         # Send message to all specified chat IDs
         IFS=',' read -ra CHAT_IDS <<< "${{ inputs.telegram_chat_ids }}"
