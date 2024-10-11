@@ -23,7 +23,11 @@ runs:
     - name: Check Job Status and Send Notification
       shell: bash
       run: |
-        
+        # Retrieve input values
+        CHECKOUT_STATUS="${{ inputs.step_checkout_status }}"
+        CLONE_REPO_STATUS="${{ inputs.step_clone_repo_status }}"
+        CLEANUP_STATUS="${{ inputs.step_cleanup_status }}"
+
         # Use printf for better formatting
         if [[ "$CHECKOUT_STATUS" == "success" && "$CLONE_REPO_STATUS" == "success" && "$CLEANUP_STATUS" == "success" ]]; then
           MESSAGE=$(printf "🎉 *Build Succeeded* \n\n*Checkout Step*: %s\n\n*Clone Repo Step*: %s\n\n*Cleanup Step*: %s" "$CHECKOUT_STATUS" "$CLONE_REPO_STATUS" "$CLEANUP_STATUS")
