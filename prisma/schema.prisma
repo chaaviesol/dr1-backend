@@ -558,8 +558,9 @@ model medicine_timetable {
   totalQuantity         String?
   timing                Json?
   timeInterval          String?
-  takingQuantity        String? 
-  created_date          String?
+  takingQuantity        String?
+  daysInterval          String? 
+  created_date          DateTime?
   user_id               user_details? @relation(fields: [userId],references: [id])
 }
 
@@ -582,3 +583,4 @@ model medicines{
   created_by             Int?
   
 }
+
