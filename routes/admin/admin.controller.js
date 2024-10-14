@@ -906,7 +906,7 @@ const getAllTypesAndCategories = async (request, response) => {
     const laboratoryFeatures = laboratory?.features;
     const laboratoryServices = laboratory?.services;
     const hospitalFeatures = hospital?.features;
-    logger.info(`checkinggg`);
+
     response.status(200).json({
       success: true,
       error: false,

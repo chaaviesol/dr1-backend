@@ -637,24 +637,49 @@ const getusers = async (request, response) => {
   };
 
   try {
-    const allData = await prisma.user_details.findMany();
+    const allData = await prisma.user_details.findMany({
+      select: {
+        id: true,
+        name: true,
+        phone_no: true,
+        email: true,
+        datetime: true,
+        pincode: true,
+        ageGroup: true,
+        gender: true,
+        last_active: true,
+        status: true,
+        image: true,
+      },
+    });
 
+    let allcompletedcount = 0;
     if (allData.length > 0) {
       // Decrypt fields for each user
-      const decryptedData = allData.map((user) => ({
-        ...user,
-        id: user.id,
-        ageGroup: safeDecrypt(user?.ageGroup, secretKey),
-        name: safeDecrypt(user?.name, secretKey),
-        email: safeDecrypt(user?.email, secretKey),
-        phone_no: safeDecrypt(user?.phone_no, secretKey),
-        gender: safeDecrypt(user?.gender, secretKey),
-      }));
+      const decryptedData = allData.map((user) => {
+        const decryptedUser = {
+          ...user,
+          id: user.id,
+          ageGroup: safeDecrypt(user.ageGroup, secretKey),
+          name: safeDecrypt(user.name, secretKey),
+          email: safeDecrypt(user.email, secretKey),
+          phone_no: safeDecrypt(user.phone_no, secretKey),
+          gender: safeDecrypt(user.gender, secretKey),
+        };
+
+        if (user.ageGroup) {
+          allcompletedcount++;
+        }
+
+        return decryptedUser;
+      });
 
       return response.status(200).json({
         success: true,
         error: false,
         data: decryptedData,
+        allregisteredcount:decryptedData.length,
+        allcompletedcount: allcompletedcount,
       });
     } else {
       return response.status(200).json({

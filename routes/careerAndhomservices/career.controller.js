@@ -3,7 +3,7 @@ require("dotenv").config();
 
 const careerupload = async (request, response) => {
   const datetime = getCurrentDateInIST();
-
+  console.log(request.body)
   try {
     const {
       name,

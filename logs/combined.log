@@ -132,3 +132,22 @@
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-10T09:26:12.186Z"}
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-10T09:26:13.218Z"}
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-10T09:26:15.243Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:35:31.130Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:35:31.169Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:35:31.878Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:35:32.182Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:36:08.231Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:36:09.063Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:42:22.492Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:42:22.541Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:43:49.254Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:43:49.296Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:47:20.317Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:47:20.996Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:47:48.803Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:47:50.245Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:49:46.825Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:49:47.581Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:55:45.654Z"}
+{"level":"info","message":"checkinggg","timestamp":"2024-10-11T08:55:45.691Z"}
+{"level":"error","message":"Internal server error: \nInvalid `prisma.doctor_details.count()` invocation in\nC:\\Users\\dell\\Desktop\\doc_be_newrepo\\dr1-backend\\routes\\admin\\admin.controller.js:1136:29\n\n  1133     status: \"Y\",\n  1134   },\n  1135 }),\n→ 1136 prisma.doctor_details.count(\nCan't reach database server at `doconerecoveredsept25.c5qcaqeqc4di.ap-south-1.rds.amazonaws.com`:`5432`\n\nPlease make sure your database server is running at `doconerecoveredsept25.c5qcaqeqc4di.ap-south-1.rds.amazonaws.com`:`5432`. in admin-totalCount API","timestamp":"2024-10-14T05:32:26.126Z"}
