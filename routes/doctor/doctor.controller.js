@@ -1141,7 +1141,7 @@ const getadoctorfeedback = async (req, res) => {
         ...feedback,
         userid: {
           ...feedback.userid,
-          name: safeDecrypt(feedback.userid.name, secretKey), // Decrypt the name here
+          name: safeDecrypt(feedback.userid.name, secretKey), 
         },
       };
     });
@@ -1152,6 +1152,14 @@ const getadoctorfeedback = async (req, res) => {
       0
     );
     const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
+    const updaterating = await prisma.doctor_details.update({
+      where: {
+        id: doctor_id,
+      },
+      data: {
+        rating: averageRating,
+      },
+    });
 
     res.status(200).json({
       success: true,

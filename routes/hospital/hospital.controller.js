@@ -1326,6 +1326,23 @@ const get_hospitalDetails = async (req, res) => {
       where: {
         id: id,
       },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        rating: true,
+        licence_no: true,
+        feature: true,
+        datetime: true,
+        speciality: true,
+        contact_no: true,
+        type: true,
+        pincode: true,
+        about: true,
+        email: true,
+        last_active: true,
+        status: true,
+      },
     });
 
     if (find) {
@@ -1343,9 +1360,19 @@ const get_hospitalDetails = async (req, res) => {
       // const decryptedRegistrationNo = decrypt(find.registration_no, secretKey);
 
       // Sending response with decrypted data
+      const district = await prisma.pincode_data.findFirst({
+        where: {
+          pincode: find.pincode,
+        },
+        select: {
+          district: true,
+        },
+      });
+
       return res.status(200).json({
         data: {
           ...find,
+          ...district,
           // phone_no: decryptedPhone,
           // email: decryptedEmail,
           // registration_no: decryptedRegistrationNo,
@@ -1616,11 +1643,14 @@ const getahospitalfeedback = async (req, res) => {
       0
     );
     const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
-
-    // Add averageRating to each feedback entry
-    // data.forEach((feedback) => {
-    //   feedback.averageRating = averageRating;
-    // });
+    const updaterating = await prisma.hospital_details.update({
+      where: {
+        id: hospital_id,
+      },
+      data: {
+        rating: averageRating,
+      },
+    });
 
     res.status(200).json({
       success: true,

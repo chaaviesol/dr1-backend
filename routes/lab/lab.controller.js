@@ -887,6 +887,14 @@ const getalabfeedback = async (req, res) => {
       0
     );
     const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
+    const updaterating = await prisma.lab_details.update({
+      where: {
+        id: lab_id,
+      },
+      data: {
+        rating: averageRating,
+      },
+    });
 
     res.status(200).json({
       success: true,
