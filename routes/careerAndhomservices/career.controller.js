@@ -3,7 +3,7 @@ require("dotenv").config();
 
 const careerupload = async (request, response) => {
   const datetime = getCurrentDateInIST();
-  console.log(request.body)
+  console.log(request.body);
   try {
     const {
       name,
@@ -179,9 +179,171 @@ const homeservicerequests = async (request, response) => {
   }
 };
 
+/////////////////category-manage///////////////////////////////////////////
+const addcategory = async (request, response) => {
+  try {
+    let { id, type, department, speciality } = request.body;
+    const imageLink = request.file?.location;
+    const datetime = getCurrentDateInIST();
+    department = department?.trim().replace(/\s+/g, " ");
+
+    // Validate the required fields
+    if (!department) {
+      return response.status(400).json({
+        error: true,
+        message: "department can't be null or empty.",
+      });
+    }
+
+    const upr_category = department.toUpperCase();
+    if (id) {
+      const check = await prisma.career_category.findUnique({
+        where: {
+          id: id,
+        },
+      });
+      console.log({ check });
+      if (!check) {
+        return response.status(400).json({
+          error: true,
+          message: "department not found.",
+        });
+      }
+
+      if (check.department !== upr_category) {
+        console.log("heyyyyyyyyy");
+        const checkcategory = await prisma.career.findFirst({
+          where: {
+            department: check.department,
+            type: check?.type,
+          },
+        });
+        console.log({ checkcategory });
+        if (checkcategory) {
+          return response.status(400).json({
+            error: true,
+            message: "This department can't be updated ",
+          });
+        }
+
+        const update = await prisma.career_category.update({
+          where: {
+            id: id,
+          },
+          data: {
+            department: upr_category,
+            type: type,
+            speciality: speciality,
+            modified_date: datetime,
+          },
+        });
+
+        if (update) {
+          return response.status(200).json({
+            success: true,
+            error: false,
+            message: "Updated successfully.",
+          });
+        }
+      } else {
+        const update = await prisma.career_category.update({
+          where: {
+            id: id,
+          },
+          data: {
+            department: upr_category,
+            type: type,
+            speciality: speciality,
+            modified_date: datetime,
+          },
+        });
+
+        if (update) {
+          return response.status(200).json({
+            success: true,
+            error: false,
+            message: "Category updated successfully.",
+          });
+        }
+      }
+    } else {
+      const checkcategory = await prisma.productcategory.findMany({
+        where: {
+          type: type,
+          department: department,
+        },
+      });
+
+      if (checkcategory.length > 0) {
+        return response.status(400).json({
+          error: true,
+          message: "Department already exists.",
+          status: 400,
+        });
+      }
+      const add = await prisma.career_category.create({
+        data: {
+          department: department,
+          type: type,
+          speciality: speciality,
+          created_date: datetime,
+        },
+      });
+
+      if (add) {
+        return response.status(200).json({
+          success: true,
+          error: false,
+          message: "Category created successfully.",
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in career-addcategory API`
+    );
+    console.error(error);
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getcategory = async (request, response) => {
+  try {
+    const get = await prisma.career_category.findMany({
+      orderBy: {
+        department: "asc",
+      },
+      select: {
+        id: true,
+        type: true,
+        department: true,
+        speciality: true,
+      },
+    });
+    if (get.length > 0) {
+      return response.status(200).json({
+        data: get,
+        success: true,
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in career-getcategory API`
+    );
+    console.error(error);
+    response.status(500).json({ error: "Internal Server Error" });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   careerupload,
   getcareerrequest,
   homeserviceupload,
   homeservicerequests,
+  addcategory,
+  getcategory,
 };

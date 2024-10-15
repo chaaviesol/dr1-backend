@@ -584,3 +584,12 @@ model medicines{
   
 }
 
+model career_category{
+    id                     Int                      @id @default(autoincrement())
+    type                   String?                 
+    department             String?
+    speciality             Json?
+    created_date           DateTime?
+    modified_date          DateTime?
+}
+
