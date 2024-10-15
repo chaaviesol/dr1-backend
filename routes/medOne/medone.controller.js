@@ -6,6 +6,7 @@ const { request, response } = require("express");
 const logDirectory = "./logs";
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const res = require("express/lib/response");
 // const { use } = require("bcrypt/promises");
 
 const logger = winston.createLogger({
@@ -25,6 +26,36 @@ const logger = winston.createLogger({
 
 
 
+// Helper function to convert "12:00 PM" format into a Date object
+function convertTimeTo24Hour(timeStr) {
+  const [time, modifier] = timeStr.split(' '); // Split time and AM/PM
+  let [hours, minutes] = time.split(':');
+
+  if (modifier === 'PM' && hours !== '12') {
+    hours = parseInt(hours, 10) + 12;
+  }
+  if (modifier === 'AM' && hours === '12') {
+    hours = '00';
+  }
+
+  // Create a new Date object and set hours/minutes
+  const currentDate = new Date();
+  currentDate.setHours(parseInt(hours, 10));
+  currentDate.setMinutes(parseInt(minutes, 10));
+  currentDate.setSeconds(0); // Set seconds to 0
+
+  return currentDate;
+}
+
+  function scheduleNotification(time, message) {
+    const delay = time - new Date(); // Calculate delay in milliseconds
+    if (delay > 0) {
+      setTimeout(() => {
+        console.log(`Notification: ${message}`);
+        // Here you can send the notification (push notification, SMS, etc.)
+      }, delay);
+    }
+  }
 
 const addUserData = async(request,response)=>{
     const secretKey = process.env.ENCRYPTION_KEY;
@@ -377,7 +408,10 @@ const getMedicine = async(request,response)=>{
   try{
     const getmedicine = await prisma.generic_product.findMany({
       where:{
-        is_active:"Y"
+        is_active:"Y",
+        category:{
+          array_contains:["MEDICINES"]
+        }
       },
       select:{
         id:true,
@@ -456,6 +490,7 @@ const addMedicineSchedule = async(request,response)=>{
         totalQuantity,
         timing,
         timeInterval,
+        daysInterval,
         takingQuantity
     }=request.body
 
@@ -472,7 +507,8 @@ const addMedicineSchedule = async(request,response)=>{
         timing:timing,
         timeInterval:timeInterval,
         takingQuantity:takingQuantity,
-        // created_date:istDate //change to dateTime
+        daysInterval:daysInterval,
+        created_date:istDate //change to dateTime
       }
     })
    console.log({addSchedule})
@@ -491,6 +527,351 @@ const addMedicineSchedule = async(request,response)=>{
   }
 }
 
+//api in home page 
+const homePageCard = async(request,response)=>{
+  try{
+    const{userId} = request.body
+
+    const getMedicineSchedule = await prisma.medicine_timetable.findMany({
+      where:{
+        userId:userId 
+      }
+    })
+    console.log({getMedicineSchedule})
+
+    for(let i=0; i<getMedicineSchedule.length; i++){
+      const tableData = getMedicineSchedule[i]
+      console.log({tableData})
+      const medicineName = tableData.medicine
+      console.log({medicineName})
+      const medicineType = tableData.medicine_type
+      console.log({medicineType})
+      const totalDays = tableData.no_of_days
+      console.log({totalDays})
+      const timing = tableData.timing
+      console.log({timing})
+      
+      const findRoutine = await prisma.dailyRoutine.findMany({
+        where:{
+          userId:tableData.userId
+        }
+      })
+     
+      const routine = findRoutine[0].routine
+      console.log({routine})
+    
+
+    }
+    
+
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:getMedicineSchedule
+    })
+
+  }catch (error) {
+    console.log({error})
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-homePageCard api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// const notifyMedicineSchedule = async(request,response)=>{
+//   try{
+//     const {userid} = request.body
+//     const findRoutine = await prisma.dailyRoutine.findMany({
+//       where:{
+//         userId:userid
+//       }
+//     })
+//     console.log({findRoutine})
+//     return response.status(200).json({
+//       error:false,
+//       success:true,
+//       message:"Successfull",
+//       data:findRoutine
+//     })
+
+//   }catch (error) {
+//     console.log({error})
+//     response.status(500).json(error.message);
+//     logger.error(`Internal server error: ${error.message} in medone-notifymedicineschedule api`);
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// }
+
+
+
+const notifyMedicineSchedule = async (request, response) => {
+  try {
+    const { userid } = request.body;
+
+    // Fetch user's daily routine
+    const findRoutine = await prisma.dailyRoutine.findFirst({
+      where: { userId: userid }
+    });
+
+    if (!findRoutine) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "User routine not found"
+      });
+    }
+
+    // Fetch user's medicine schedule
+    const medicineSchedule = await prisma.medicine_timetable.findMany({
+      where: { userId: userid }
+    });
+
+    if (!medicineSchedule || medicineSchedule.length === 0) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "No medicine schedule found for this user"
+      });
+    }
+
+    // Define notification times array
+    let notifications = [];
+
+    // Iterate through each medicine entry to determine notification time
+    medicineSchedule.forEach((medicine) => {
+      const { timing, beforeFood, name } = medicine;
+      let notificationTime;
+
+      if (!timing || !name) {
+        console.log(`Missing timing or medicine name for medicine ID: ${medicine.id}`);
+        return;
+      }
+
+      // Morning medicine
+      if (timing === "Morning") {
+        const breakfastTime = new Date(`1970-01-01T${convertTime(findRoutine.breakfast)}:00`);
+        if (beforeFood) {
+          notificationTime = new Date(breakfastTime.getTime() - 45 * 60000); // 45 minutes before breakfast
+        } else {
+          notificationTime = new Date(breakfastTime.getTime() + 45 * 60000); // 45 minutes after breakfast
+        }
+      }
+
+      // Night medicine
+      if (timing === "Night") {
+        const sleepTime = new Date(`1970-01-01T${convertTime(findRoutine.sleep)}:00`);
+        if (beforeFood) {
+          notificationTime = new Date(sleepTime.getTime() - 45 * 60000); // 45 minutes before sleep
+        } else {
+          notificationTime = new Date(sleepTime.getTime() + 45 * 60000); // 45 minutes after sleep
+        }
+      }
+
+      if (notificationTime) {
+        notifications.push({
+          medicine: name,
+          notificationTime: notificationTime.toLocaleTimeString(),
+        });
+      } else {
+        console.log(`Failed to calculate notification time for medicine: ${name}`);
+      }
+    });
+
+    // Send notifications and response
+    return response.status(200).json({
+      error: false,
+      success: true,
+      message: "Notifications scheduled",
+      notifications: notifications,
+    });
+
+  } catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-notifymedicineschedule api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+// Helper function to convert time in 'HH:MM AM/PM' to 'HH:MM' (24-hour format)
+const convertTime = (timeStr) => {
+  if (!timeStr) return null; // Handle missing or undefined times
+  const [time, modifier] = timeStr.split(' ');
+  let [hours, minutes] = time.split(':');
+  if (hours === '12') {
+    hours = '00';
+  }
+  if (modifier === 'PM') {
+    hours = parseInt(hours, 10) + 12;
+  }
+  return `${hours}:${minutes}`;
+};
+
+
+const userProfile = async(request,response)=>{
+  try{
+    const secretKey = process.env.ENCRYPTION_KEY;
+    
+  const safeDecrypt = (text, key) => {
+    try {
+      return decrypt(text, key);
+    } catch (err) {
+      return text;
+    }
+  };
+
+    const {userId} = request.body
+    if(!userId){
+      return response.status(404).json({
+        error:true,
+        success:false,
+        message:"User id is null..."
+      })
+    }
+    const userData = await prisma.user_details.findUnique({
+      where:{
+         id:userId
+      }
+    })
+    if(!userData){
+      return response.status(404)({
+        error:true, 
+        success:false,
+        message:"User not found"
+      })
+    }
+
+    const decryptedname = safeDecrypt(userData.name, secretKey);
+    const decryptedageGroup = safeDecrypt(userData?.ageGroup, secretKey);
+    const decryptgender = safeDecrypt(userData?.gender, secretKey);
+
+    userData.name = decryptedname;
+    userData.ageGroup = decryptedageGroup;
+    userData.gender = decryptgender;
+
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfull",
+      data:userData
+    })
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-userprofile api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+const editRoutine = async(request,response)=>{
+  try{
+    const {
+         userId,
+         routine
+    } = request.body
+   
+    if(!userId && !routine){
+      return response.status(404).json({
+        error:true,
+        success:false,
+        message:"User id and routine data are needed"
+      })
+    }
+    const editdata = await prisma.dailyRoutine.updateMany({
+      where:{
+        userId:userId
+      },
+      data:{
+        routine:routine
+      }
+    })
+    console.log({editdata})
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfully edited",
+      data:editdata
+    })
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-editroutine api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+const editMedicineSchedule = async(request,response)=>{
+  try{
+    const{
+      scheduleId,
+      medicine,
+      medicine_type,
+      startDate,
+      no_of_days,
+      afterFd_beforeFd,
+      totalQuantity,
+      timing,
+      timeInterval,
+      takingQuantity,
+      daysInterval
+    } = request.body
+    const editSchedule = await prisma.medicine_timetable.updateMany({
+      where:{
+        id:scheduleId
+      },
+      data:{
+          medicine:medicine,
+          medicine_type:medicine_type,
+          startDate:startDate,
+          no_of_days:no_of_days,
+          afterFd_beforeFd:afterFd_beforeFd,
+          totalQuantity:totalQuantity,
+          timing:timing,
+          timeInterval:timeInterval,
+          takingQuantity:takingQuantity,
+          daysInterval:daysInterval
+      }
+    })
+    console.log({editSchedule})
+    const getEditedData= await prisma.medicine_timetable.findMany({
+      where:{
+        id:scheduleId
+      }
+    })
+    console.log(getEditedData)
+    return response.status(200).json({
+      error:false,
+      success:true,
+      message:"Successfully edited the schedule",
+      data:getEditedData
+    })
+
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-editschedule api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -500,5 +881,10 @@ module.exports = {addUserData,
   getUserRoutine,
   getMedicine,
   addNewMedicine,
-  addMedicineSchedule
+  addMedicineSchedule,
+  homePageCard,
+  notifyMedicineSchedule,
+  userProfile,
+  editRoutine,
+  editMedicineSchedule
 }
