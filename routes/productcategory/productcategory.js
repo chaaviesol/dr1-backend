@@ -36,7 +36,9 @@ const addcategory = async (request, response) => {
         console.log("heyyyyyyyyy");
         const checkcategory = await prisma.generic_product.findFirst({
           where: {
-            category: check.category,
+            category: {
+              array_contains: check.category,
+            },
           },
         });
         console.log({ checkcategory });
@@ -137,11 +139,11 @@ const getcategory = async (request, response) => {
       orderBy: {
         category: "asc",
       },
-      select:{
-        id:true,
-        category:true,
-        image:true
-      }
+      select: {
+        id: true,
+        category: true,
+        image: true,
+      },
     });
     if (get.length > 0) {
       return response.status(200).json({
@@ -183,7 +185,9 @@ const deletecategory = async (request, response) => {
       // Check if there are products associated with this category
       const checkcategory = await prisma.generic_product.findFirst({
         where: {
-          category: check.category,
+          category:{
+            array_contains:check.category,
+          } 
         },
       });
 
