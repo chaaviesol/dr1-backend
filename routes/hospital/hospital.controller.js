@@ -1296,6 +1296,9 @@ const getDoctorList = async (req, res) => {
           phone_no: true,
           email: true,
           image: true,
+          type:true,
+          specialization:true,
+         
         },
       });
       doctorDatas.push(doctorsDetails[0]);
