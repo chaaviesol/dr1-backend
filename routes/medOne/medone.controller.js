@@ -605,82 +605,154 @@ const homePageCard = async(request,response)=>{
 //   }
 // }
 
-
-
 const notifyMedicineSchedule = async (request, response) => {
   try {
     const { userid } = request.body;
 
-    // Fetch user's daily routine
     const findRoutine = await prisma.dailyRoutine.findFirst({
-      where: { userId: userid }
+      where: { userId: userid },
     });
-
+    
+    console.log({ findRoutine });
     if (!findRoutine) {
       return response.status(404).json({
         error: true,
         success: false,
-        message: "User routine not found"
+        message: "User routine not found",
       });
     }
 
-    // Fetch user's medicine schedule
+    const routineData = findRoutine.routine;
+    const breakfastTimeString = routineData[0].breakfast || null; 
+    const lunchTimeString = routineData[0].lunch || null;
+    const dinnerTimeString = routineData[0].dinner || null;
+
+    console.log({ breakfastTimeString, lunchTimeString, dinnerTimeString });
+
+    if (!breakfastTimeString || !lunchTimeString || !dinnerTimeString) {
+      console.error("Invalid or missing meal times in routine data!");
+      return response.status(400).json({
+        error: true,
+        success: false,
+        message: "Invalid or missing meal times in user's routine",
+      });
+    }
+
     const medicineSchedule = await prisma.medicine_timetable.findMany({
-      where: { userId: userid }
+      where: { userId: userid },
     });
 
     if (!medicineSchedule || medicineSchedule.length === 0) {
       return response.status(404).json({
         error: true,
         success: false,
-        message: "No medicine schedule found for this user"
+        message: "No medicine schedule found for this user",
       });
     }
 
-    // Define notification times array
     let notifications = [];
 
-    // Iterate through each medicine entry to determine notification time
-    medicineSchedule.forEach((medicine) => {
-      const { timing, beforeFood, name } = medicine;
-      let notificationTime;
-
-      if (!timing || !name) {
-        console.log(`Missing timing or medicine name for medicine ID: ${medicine.id}`);
-        return;
+    const getRoutineTime = (timeString) => {
+      console.log({ timeString });
+      if (!timeString) {
+        console.error("Time string is undefined or invalid:", timeString);
+        return new Date('Invalid Date'); // Fallback for invalid date
+      }
+      
+      const convertedTime = convertTime(timeString);
+      console.log({ convertedTime });
+      if (!convertedTime) {
+        console.error("Failed to convert time:", timeString);
+        return new Date('Invalid Date');
       }
 
-      // Morning medicine
-      if (timing === "Morning") {
-        const breakfastTime = new Date(`1970-01-01T${convertTime(findRoutine.breakfast)}:00`);
-        if (beforeFood) {
-          notificationTime = new Date(breakfastTime.getTime() - 45 * 60000); // 45 minutes before breakfast
-        } else {
-          notificationTime = new Date(breakfastTime.getTime() + 45 * 60000); // 45 minutes after breakfast
+      return new Date(`1970-01-01T${convertedTime}:00`);
+    };
+
+    for (const medicine of medicineSchedule) {
+      const { timing, afterFd_beforeFd, startDate, no_of_days } = medicine;
+      
+      if (!timing || !startDate) {
+        console.log(`Missing timing or start date for medicine ID: ${medicine.id}`);
+        continue; // Skip this entry
+      }
+
+      const startDateObj = new Date(medicine.startDate.replace(/\//g, '-')); // Replace '/' with '-' to avoid timezone shift
+      const today = new Date();
+      const startDateonly = startDateObj.toISOString().split('T')[0];
+      console.log({startDateonly});
+      
+      const todayDate = today.toISOString().split('T')[0];
+      console.log({todayDate});
+      
+      const timeDifference = today.getTime() - startDateObj.getTime();
+      console.log({timeDifference});
+      
+      const totalDays = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+      console.log({totalDays});
+      
+      const numberOfDays = parseInt(medicine.no_of_days, 10); // Ensure it's an integer
+      console.log({numberOfDays});
+      
+      const medicineStartDate = startDateonly;
+      console.log({medicineStartDate});
+      
+      const date = new Date(medicineStartDate); // No timezone shift now
+      console.log({date});
+      
+      // Add the number of days to the start date to calculate the end date
+      const endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + numberOfDays);
+      console.log(`Notifications should be sent until: ${endDate.toISOString().split('T')[0]}`);
+      
+      const medicineUpto = endDate.toISOString().split('T')[0]
+      console.log({medicineUpto})
+      
+      // if (startDateonly === todayDate) {
+        if (todayDate === startDateonly || todayDate === medicineUpto) {
+          let notificationTime;
+        for(const time of timing){
+          if (time.includes("Morning")) {
+            const breakfastTime = getRoutineTime(breakfastTimeString);
+            notificationTime = afterFd_beforeFd === "before food"
+              ? new Date(breakfastTime.getTime() - 30 * 60000)
+              : breakfastTime;
+          }
+
+          if (time.includes("lunch")) {
+            const lunchTime = getRoutineTime(lunchTimeString);
+            notificationTime = afterFd_beforeFd === "before food"
+              ? new Date(lunchTime.getTime() - 30 * 60000)
+              : lunchTime;
+          }
+
+          if (time.includes("dinner")) {
+            const dinnerTime = getRoutineTime(dinnerTimeString);
+            notificationTime = afterFd_beforeFd === "before food"
+              ? new Date(dinnerTime.getTime() - 30 * 60000)
+              : dinnerTime;
+          }
+
+          if (notificationTime && !isNaN(notificationTime)) {
+            notifications.push({
+              medicine_timetableID :medicine.id,
+              medicine: medicine.medicine[0].name,
+              medicine_type: medicine.medicine_type,
+              notificationTime: notificationTime.toLocaleTimeString(),
+            });
+          }
         }
       }
+    }
 
-      // Night medicine
-      if (timing === "Night") {
-        const sleepTime = new Date(`1970-01-01T${convertTime(findRoutine.sleep)}:00`);
-        if (beforeFood) {
-          notificationTime = new Date(sleepTime.getTime() - 45 * 60000); // 45 minutes before sleep
-        } else {
-          notificationTime = new Date(sleepTime.getTime() + 45 * 60000); // 45 minutes after sleep
-        }
-      }
+    if (notifications.length === 0) {
+      return response.status(404).json({
+        error: true,
+        success: false,
+        message: "No notifications scheduled",
+      });
+    }
 
-      if (notificationTime) {
-        notifications.push({
-          medicine: name,
-          notificationTime: notificationTime.toLocaleTimeString(),
-        });
-      } else {
-        console.log(`Failed to calculate notification time for medicine: ${name}`);
-      }
-    });
-
-    // Send notifications and response
     return response.status(200).json({
       error: false,
       success: true,
@@ -689,27 +761,45 @@ const notifyMedicineSchedule = async (request, response) => {
     });
 
   } catch (error) {
-    console.log({ error });
-    response.status(500).json(error.message);
-    logger.error(`Internal server error: ${error.message} in medone-notifymedicineschedule api`);
-  } finally {
-    await prisma.$disconnect();
+    console.error({ error });
+    return response.status(500).json({ error: error.message });
   }
 };
 
-// Helper function to convert time in 'HH:MM AM/PM' to 'HH:MM' (24-hour format)
-const convertTime = (timeStr) => {
-  if (!timeStr) return null; // Handle missing or undefined times
-  const [time, modifier] = timeStr.split(' ');
+
+// Helper function to convert 12-hour AM/PM time to 24-hour format
+// Helper function to convert 12-hour AM/PM time to 24-hour format
+const convertTime = (timeString) => {
+  if (!timeString || typeof timeString !== 'string') {
+    console.error("Invalid time string:", timeString);
+    return null;
+  }
+
+  const [time, modifier] = timeString.split(' ');
   let [hours, minutes] = time.split(':');
+
+  // Ensure hours is treated as a string
+  hours = String(hours); 
+
   if (hours === '12') {
-    hours = '00';
+    hours = '00'; // Handle 12:00 AM as midnight
   }
-  if (modifier === 'PM') {
-    hours = parseInt(hours, 10) + 12;
+
+  if (modifier === 'PM' && hours !== '00') {
+    hours = String(parseInt(hours, 10) + 12); // Convert PM times to 24-hour format and ensure it's a string
   }
-  return `${hours}:${minutes}`;
+
+  return `${hours.padStart(2, '0')}:${minutes}`;
 };
+
+
+
+
+
+
+
+
+
 
 
 const userProfile = async(request,response)=>{
@@ -862,7 +952,43 @@ const editMedicineSchedule = async(request,response)=>{
   }
 }
 
-
+const getUserSchedule = async(request,response)=>{
+  try{
+    const {userId} = request.body
+    if(!userId){
+      return response.status(404).json({
+        error:true,
+        success:false,
+        message:"User id required......"
+      })
+    }
+    const getSchedule = await prisma.medicine_timetable.findMany({
+      where:{
+        userId:userId
+      }
+    })
+    console.log({getSchedule})
+    if(getSchedule.length === 0){
+      return response.status(404).json({
+        error:true,
+        success:false,
+        message:'Medicine schedule not found'
+      })
+    }
+    return response.status(200).json({
+      error:true,
+      success:false,
+      message:"Successfull",
+      data:getSchedule
+    })
+  }catch (error) {
+    console.log({ error });
+    response.status(500).json(error.message);
+    logger.error(`Internal server error: ${error.message} in medone-getuserschedule api`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 
 
@@ -886,5 +1012,6 @@ module.exports = {addUserData,
   notifyMedicineSchedule,
   userProfile,
   editRoutine,
-  editMedicineSchedule
+  editMedicineSchedule,
+  getUserSchedule
 }

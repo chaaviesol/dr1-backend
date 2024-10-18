@@ -10,7 +10,8 @@ const {addUserData,
     notifyMedicineSchedule,
     userProfile,
     editRoutine,
-    editMedicineSchedule
+    editMedicineSchedule,
+    getUserSchedule
 } = require('./medone.controller')
 const medoneRouter = express.Router();
 const auth = require("../../middleware/Auth/auth");
@@ -30,7 +31,7 @@ medoneRouter.post('/notifymedicineschedule',notifyMedicineSchedule) // not compl
 medoneRouter.post('/userprofile',userProfile)
 medoneRouter.post('/editroutine',editRoutine)
 medoneRouter.post('/editschedule',editMedicineSchedule)
-
+medoneRouter.post('/getuserschedule',getUserSchedule)
 
 
 
