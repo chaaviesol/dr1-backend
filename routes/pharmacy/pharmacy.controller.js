@@ -540,6 +540,12 @@ const salesorder = async (request, response) => {
         message: "Please login as a customer",
       });
     }
+    if (!delivery_address || !contact_no ) {
+      return response.status(400).json({
+        error: true,
+        message: "Missing delivery details",
+      });
+    }
 
     if (!order_type) {
       return response.status(400).json({

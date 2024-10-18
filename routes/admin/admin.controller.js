@@ -1333,7 +1333,7 @@ const getchatdata = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
+//admin get all details of health partners
 const getalldatas = async (request, response) => {
   try {
     const secretKey = process.env.ENCRYPTION_KEY;
@@ -1355,6 +1355,7 @@ const getalldatas = async (request, response) => {
           id: true,
           name: true,
           pincode: true,
+          gender:true,
           email: true,
           specialization: true,
           datetime: true,
@@ -1364,9 +1365,15 @@ const getalldatas = async (request, response) => {
           interacteduser: true,
           phone_office: true,
           education_qualification: true,
+          additional_qualification: true,
+          additional_speciality: true,
+          experience: true,
+          second_name: true,
           sector: true,
           about: true,
           type: true,
+          phone_office: true,
+          address: true,
         },
       });
 

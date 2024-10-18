@@ -19,9 +19,9 @@ const doctor_registration = async (req, res) => {
     password,
     image,
     qualification,
-    additionalQualification,
+    additional_qualification,
     specialization,
-    additionalSpeciality,
+    additional_speciality,
     type,
     gender,
     address,
@@ -165,9 +165,9 @@ const doctor_registration = async (req, res) => {
         password: hashedpassword,
         image: dr_imageLink,
         education_qualification: qualification,
-        additional_qualification: additionalQualification,
+        additional_qualification: additional_qualification,
         specialization: specialization,
-        additional_speciality: additionalSpeciality,
+        additional_speciality: additional_speciality,
         type: type,
         gender: gender,
         address: address,
@@ -202,7 +202,7 @@ const doctor_registration = async (req, res) => {
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in doctor_registration API`
+      `Internal server error: ${error.message} in doctor-doctor_registration API`
     );
 
     res.status(500).json({ error: "Internal Server Error" });
@@ -282,7 +282,7 @@ const doctor_login = async (req, res) => {
       });
     });
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in doctor_login API`);
+    logger.error(`Internal server error: ${error.message} in doctor-doctor_login API`);
 
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
