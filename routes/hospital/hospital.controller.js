@@ -1645,13 +1645,14 @@ const getahospitalfeedback = async (req, res) => {
       (sum, feedback) => sum + feedback.rating,
       0
     );
-    const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
+   
+    const averageRating = datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
     const updaterating = await prisma.hospital_details.update({
       where: {
         id: hospital_id,
       },
       data: {
-        rating: averageRating,
+        rating: averageRating.toString(),
       },
     });
 

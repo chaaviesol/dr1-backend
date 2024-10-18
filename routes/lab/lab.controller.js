@@ -31,7 +31,6 @@ const addlab = async (req, response) => {
         lisence_no &&
         email &&
         password &&
-        rating &&
         photo &&
         about,
       Services,
@@ -171,7 +170,6 @@ const addlab = async (req, response) => {
           email: emaillower,
           password: hashedPass,
           status: status,
-          rating: rating,
           photo: labImage,
           about: about,
           featured_partner: featured_partner,
@@ -886,13 +884,13 @@ const getalabfeedback = async (req, res) => {
       (sum, feedback) => sum + feedback.rating,
       0
     );
-    const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
+    const averageRating = datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
     const updaterating = await prisma.lab_details.update({
       where: {
         id: lab_id,
       },
       data: {
-        rating: averageRating,
+        rating: averageRating.toString(),
       },
     });
 
@@ -1082,155 +1080,6 @@ const approvelab = async (request, response) => {
   }
 };
 
-// const completeedit = async (req, res) => {
-//   // const secretKey = process.env.ENCRYPTION_KEY;
-
-//   const currentDate = new Date();
-//   const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
-//   const istDate = new Date(currentDate.getTime() + istOffset);
-
-//   try {
-//     const {
-//       lab_id,
-//       name,
-//       contact_no,
-//       address,
-//       pincode,
-//       timing,
-//       lisence_no,
-//       email,
-//       password,
-//       status,
-//       rating,
-//       photo,
-//       about,
-//       featured_partner,
-//       Services,
-//       features,
-//     } = req.body;
-
-//     if (!lab_id) {
-//       return res.status(400).json({
-//         message: "Laboratory ID is required",
-//         error: true,
-//       });
-//     }
-
-//     // Validation functions
-//     const validateMobileNumber = (mobileNumber) => {
-//       const mobileNumberRegex = /^[6-9]\d{9}$/;
-//       return mobileNumberRegex.test(mobileNumber);
-//     };
-
-//     const validateEmail = (email_id) => {
-//       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//       return emailRegex.test(email_id);
-//     };
-
-//     // Check for email, phone, or lisence number changes
-//     let updateFields = [];
-
-//     if (contact_no) {
-//       if (!validateMobileNumber(contact_no)) {
-//         return res.status(400).json({
-//           message: "Invalid mobile number",
-//           error: true,
-//         });
-//       }
-//       updateFields.push("contact_no");
-//     }
-
-//     if (email) {
-//       if (!validateEmail(email)) {
-//         return res.status(400).json({
-//           message: "Invalid email address",
-//           error: true,
-//         });
-//       }
-//       updateFields.push("email");
-//     }
-
-//     if (email || contact_no || lisence_no) {
-//       const labs = await prisma.lab_details.findMany({
-//         where: {
-//           OR: [
-//             { email: email },
-//             { contact_no: contact_no },
-//             { lisence_no: lisence_no },
-//           ],
-//         },
-//       });
-
-//       if (labs.length > 0) {
-//         return res.status(400).json({
-//           error: true,
-//           message: "Email, phone number, or lisence number already exists",
-//           success: false,
-//         });
-//       }
-//     }
-
-//     const updateData = {
-//       name,
-//       contact_no,
-//       address,
-//       pincode,
-//       timing,
-//       lisence_no,
-//       email,
-//       // password,
-//       status,
-//       rating,
-//       photo,
-//       about,
-//       featured_partner,
-//       Services,
-//       features,
-//       updatedDate: istDate,
-//     };
-
-//     // Remove undefined fields from updateData
-//     Object.keys(updateData).forEach(
-//       (key) => updateData[key] === undefined && delete updateData[key]
-//     );
-
-//     const edited_data = await prisma.lab_details.update({
-//       where: { id: lab_id },
-//       data: updateData,
-//     });
-
-//     if (edited_data) {
-//       const text = `Successfully updated your ${updateFields.join(", ")}.`;
-//       await prisma.adm_notification.create({
-//         data: {
-//           sender: lab_id,
-//           type: "Laboratory",
-//           read: "N",
-//           text: text,
-//           created_date: istDate,
-//         },
-//       });
-//       return res.status(200).json({
-//         error: false,
-//         success: true,
-//         message: "Successfully edited the details",
-//         data: edited_data,
-//       });
-//     }
-//   } catch (error) {
-//     logger.error(
-//       `Internal server error: ${error.message} in lab completeedit API`
-//     );
-//     console.error(error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal Server Error",
-//     });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
-
 const completeedit = async (req, res) => {
   // const secretKey = process.env.ENCRYPTION_KEY;
 
@@ -1250,7 +1099,6 @@ const completeedit = async (req, res) => {
       email,
       password,
       status,
-      rating,
       photo,
       about,
       featured_partner,
@@ -1354,7 +1202,6 @@ const completeedit = async (req, res) => {
       email: checkChanges("email", email),
       // password: checkChanges('password', password), // Uncomment and handle password hashing if needed
       status: checkChanges("status", status),
-      rating: checkChanges("rating", rating),
       photo: checkChanges("photo", photo),
       about: checkChanges("about", about),
       featured_partner: checkChanges("featured partner", featured_partner),

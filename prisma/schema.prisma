@@ -29,7 +29,7 @@ model doctor_details{
   address                    Json?
   experience                 Int?
   about                      String?
-  rating                     Float?
+  rating                     String?
   datetime                   DateTime
   updatedDate                DateTime?
   registration_no            String?
@@ -52,7 +52,7 @@ model doctor_details{
   name                       String?
   address                    Json?
   licence_no                 String?
-  rating                     Float?
+  rating                     String?
   feature                    Json?
   datetime                   DateTime
   photo                      Json?
@@ -111,7 +111,7 @@ model doctor_details{
     email                    String?
     password                 String?
     status                   String?
-    rating                   Float?
+    rating                   String?
     datetime                 DateTime
     photo                    Json?
     about                    String?

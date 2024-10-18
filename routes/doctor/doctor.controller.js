@@ -282,7 +282,9 @@ const doctor_login = async (req, res) => {
       });
     });
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in doctor-doctor_login API`);
+    logger.error(
+      `Internal server error: ${error.message} in doctor-doctor_login API`
+    );
 
     res.status(500).json({ error: "Internal Server Error" });
   } finally {
@@ -358,13 +360,13 @@ const get_doctors = async (req, res) => {
       );
       const averageRating =
         decrypted_feedbacks.length > 0
-          ? totalRatings / decrypted_feedbacks.length
+          ? (totalRatings / decrypted_feedbacks.length).toFixed(1)
           : 0;
 
       // Update the doctor's rating in the doctor_details table
       await prisma.doctor_details.update({
         where: { id: doctor.id },
-        data: { rating: averageRating },
+        data: { rating: averageRating.toString() },
       });
 
       decrypted_doctor.rating = averageRating;
@@ -1141,7 +1143,7 @@ const getadoctorfeedback = async (req, res) => {
         ...feedback,
         userid: {
           ...feedback.userid,
-          name: safeDecrypt(feedback.userid.name, secretKey), 
+          name: safeDecrypt(feedback.userid.name, secretKey),
         },
       };
     });
@@ -1151,13 +1153,14 @@ const getadoctorfeedback = async (req, res) => {
       (sum, feedback) => sum + feedback.rating,
       0
     );
-    const averageRating = datas.length > 0 ? totalRatings / datas.length : 0;
+    const averageRating =
+      datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
     const updaterating = await prisma.doctor_details.update({
       where: {
         id: doctor_id,
       },
       data: {
-        rating: averageRating,
+        rating: averageRating.toString(),
       },
     });
 
