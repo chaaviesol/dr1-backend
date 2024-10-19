@@ -18,6 +18,7 @@ const {
   messagesave,
   getchatdata,
   getalldatas,
+  chatstatusupdate
 } = require("./admin.controller");
 
 const adminRouter = express.Router();
@@ -48,6 +49,7 @@ adminRouter.post("/total_count", totalCount); //count of total doctors,disabled 
 
 adminRouter.post("/messagesave", messagesave); //first chatbot for partners signup
 adminRouter.get("/getchatdata", getchatdata);
+adminRouter.post("/updatechatstatus",chatstatusupdate)//update the status of registered health partners thru chat bot
 adminRouter.post("/getalldatas", getalldatas); ///alldatas
 
 module.exports = adminRouter;

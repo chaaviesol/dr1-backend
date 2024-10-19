@@ -11,6 +11,7 @@ require("dotenv").config();
 const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
+const { error } = require("console");
 
 const addadmin = async (request, response) => {
   try {
@@ -1234,27 +1235,28 @@ const messagesave = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
     const { name, contact_number, type } = request.body;
-    // const mobileNumber = contact_number;
-    // if (validateMobileNumber(mobileNumber)) {
-    //   console.log('Valid mobile number');
-    // } else {
-    //   console.log('Invalid mobile number');
-    //   const resptext = "Invalid mobile number"
-    //   return response.status(401).json({
-    //     error: true,
-    //     success: false,
-    //     message: resptext
-    //   })
-    // }
-    // function validateMobileNumber(mobileNumber) {
-    //   // Regular expression for a valid 10-digit Indian mobile number
-    //   const mobileNumberRegex = /^[6-9]\d{9}$/;
-    //   return mobileNumberRegex.test(mobileNumber);
-    // }
+   
     if (!name || !contact_number || !type) {
       return response.status(400).json({
         message: "required fields can't be null",
       });
+    }
+     const mobileNumber = contact_number;
+    if (validateMobileNumber(mobileNumber)) {
+      console.log('Valid mobile number');
+    } else {
+      console.log('Invalid mobile number');
+      const resptext = "Invalid mobile number"
+      return response.status(401).json({
+        error: true,
+        success: false,
+        message: resptext
+      })
+    }
+    function validateMobileNumber(mobileNumber) {
+      // Regular expression for a valid 10-digit Indian mobile number
+      const mobileNumberRegex = /^[6-9]\d{9}$/;
+      return mobileNumberRegex.test(mobileNumber);
     }
     const check = await prisma.chat_data.findFirst({
       where: {
@@ -1280,9 +1282,10 @@ const messagesave = async (request, response) => {
           contact_no: contact_number.toString(),
           created_date: datetime,
           type: type,
+          status:"requested"
         },
       });
-      console.log({ adddata });
+    
       if (adddata) {
         response.status(200).json({
           success: true,
@@ -1309,7 +1312,11 @@ const messagesave = async (request, response) => {
 
 const getchatdata = async (request, response) => {
   try {
-    const getdata = await prisma.chat_data.find();
+    const getdata = await prisma.chat_data.findMany({
+      orderBy:{
+        created_date:"desc"
+      }
+    });
     if (getdata.length > 0) {
       return response.status(200).json({
         success: true,
@@ -1333,6 +1340,49 @@ const getchatdata = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+
+const chatstatusupdate=async (request, response) => {
+  try {
+    const {status,id}=request.body
+    if(!status ||!id){
+      response.status(400).json({
+        message: "Required fields can't be null",
+        success: false,
+        error:true
+      });
+    }
+    const getdata = await prisma.chat_data.update({
+      where:{
+        id:id
+      },
+      data:{
+        status:status
+      }
+    });
+    if (getdata) {
+      return response.status(200).json({
+        success: true,
+        message: `Successfully ${status}`,
+      });
+    } else {
+      return response.status(400).json({
+        success: false,
+        message: "Error",
+      });
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in admin-chatstatusupdate api`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 //admin get all details of health partners
 const getalldatas = async (request, response) => {
   try {
@@ -1521,4 +1571,5 @@ module.exports = {
   messagesave,
   getchatdata,
   getalldatas,
+  chatstatusupdate
 };

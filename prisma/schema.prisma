@@ -192,6 +192,7 @@ model doctor_details{
     contact_no              String?
     created_date            DateTime
     type                    String?
+    status                  String?
   }
 
   model lab_interacteduser{

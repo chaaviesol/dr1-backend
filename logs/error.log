@@ -26,3 +26,5 @@
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-18T06:57:26.368Z"}
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-18T06:59:42.449Z"}
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-18T07:00:29.743Z"}
+{"level":"error","message":"Internal server error: prisma.chat_data.find is not a function in admin-getchatdata api","timestamp":"2024-10-19T06:02:14.781Z"}
+{"level":"error","message":"Internal server error: prisma.chat_data.find is not a function in admin-getchatdata api","timestamp":"2024-10-19T06:02:14.792Z"}
