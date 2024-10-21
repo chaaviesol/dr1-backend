@@ -28,3 +28,16 @@
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-18T07:00:29.743Z"}
 {"level":"error","message":"Internal server error: prisma.chat_data.find is not a function in admin-getchatdata api","timestamp":"2024-10-19T06:02:14.781Z"}
 {"level":"error","message":"Internal server error: prisma.chat_data.find is not a function in admin-getchatdata api","timestamp":"2024-10-19T06:02:14.792Z"}
+{"level":"error","message":"Internal server error: processHospitalData is not defined in getunapproveuser API","timestamp":"2024-10-21T08:00:24.905Z"}
+{"level":"error","message":"Internal server error: processHospitalData is not defined in getunapproveuser API","timestamp":"2024-10-21T08:00:29.044Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:47:34.848Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:47:35.873Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:47:37.886Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:47:41.896Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:47:57.228Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:47:58.270Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:48:34.365Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:49:27.508Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:49:32.612Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:49:33.929Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-21T09:49:35.945Z"}

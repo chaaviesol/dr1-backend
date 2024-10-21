@@ -519,7 +519,13 @@ const userLogin = async (request, response) => {
 
       return emailRegex.test(email_id);
     }
-    const users = await prisma.user_details.findMany();
+    const users = await prisma.user_details.findMany({
+      select: {
+        id: true,
+        email: true,
+        password: true,
+      },
+    });
     let user = null;
 
     for (const dbUser of users) {
@@ -678,7 +684,7 @@ const getusers = async (request, response) => {
         success: true,
         error: false,
         data: decryptedData,
-        allregisteredcount:decryptedData.length,
+        allregisteredcount: decryptedData.length,
         allcompletedcount: allcompletedcount,
       });
     } else {
@@ -919,6 +925,12 @@ const login = async (request, response) => {
     const findUserByEmail = async (emaillower) => {
       const doctor = await prisma.doctor_details.findFirst({
         where: { email: emaillower },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+          password:true
+        },
       });
       if (doctor) {
         return {
@@ -932,6 +944,12 @@ const login = async (request, response) => {
 
       const hospital = await prisma.hospital_details.findFirst({
         where: { email: emaillower },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+          password:true
+        },
       });
       if (hospital) {
         return {
@@ -945,6 +963,12 @@ const login = async (request, response) => {
 
       const lab = await prisma.lab_details.findFirst({
         where: { email: emaillower },
+        select: {
+          id: true,
+          email: true,
+          status: true,
+          password:true
+        },
       });
       if (lab) {
         return {
@@ -982,7 +1006,7 @@ const login = async (request, response) => {
     const userType = type;
 
     const hashedDbPassword = user.password;
-    console.log({ hashedDbPassword });
+
     const generateTokens = (userId, userType) => {
       const refreshTokenPayload = { userId, userType };
       const accessTokenPayload = { userId, userType };
@@ -2938,58 +2962,151 @@ const afterconsultupdate = async (request, response) => {
 
 ///////////////user approval/////////////
 
+// const getunapproveuser = async (request, response) => {
+//   const secretKey = process.env.ENCRYPTION_KEY;
+//   const safeDecrypt = (text, key) => {
+//     try {
+//       return decrypt(text, key);
+//     } catch (err) {
+//       return text;
+//     }
+//   };
+//   try {
+//     const complete_dr = await prisma.doctor_details.findMany({
+//       where: {
+//         NOT: [{ status: "Y" }],
+//       },
+//       orderBy: {
+//         datetime: "asc",
+//       },
+//     });
+
+//     const complete_hospital = await prisma.hospital_details.findMany({
+//       where: {
+//         NOT: [{ status: "Y" }],
+//       },
+//       orderBy: {
+//         datetime: "asc",
+//       },
+//     });
+
+//     const complete_lab = await prisma.lab_details.findMany({
+//       where: {
+//         NOT: [{ status: "Y" }],
+//       },
+//       orderBy: {
+//         datetime: "asc",
+//       },
+//     });
+
+
+//     const combined_data = [
+//       ...complete_dr.map((dr) => ({ ...dr, type: "Doctor",email:safeDecrypt(dr?.email),phone_no:safeDecrypt(dr?.phone_no),registration_no:safeDecrypt(dr?.registration_no) })),
+//       ...complete_hospital.map((hospital) => ({
+//         ...hospital,
+//         type: "Hospital",
+//       })),
+//       ...complete_lab.map((lab) => ({ ...lab, type: "Laboratory" }))
+//     ];
+
+//     if (combined_data.length > 0) {
+//       response.status(200).json({
+//         success: true,
+//         data: combined_data,
+//       });
+//     } else {
+//       response.status(400).json({
+//         error: true,
+//         message: "No Data",
+//       });
+//     }
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in getunapproveuser API`
+//     );
+//     console.error(error);
+//     response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
 const getunapproveuser = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+
+  // Safe decryption function
+  const safeDecrypt = (text, key) => {
+    try {
+      return decrypt(text, key); // Replace 'decrypt' with your actual decryption function
+    } catch (err) {
+      return text; // Return original text if decryption fails
+    }
+  };
+
   try {
-    const complete_dr = await prisma.doctor_details.findMany({
-      where: {
-        OR: [{ status: "P" }, { status: null }],
-      },
-      orderBy: {
-        datetime: "asc",
-      },
-    });
+    // Fetch data in parallel using Promise.all
+    const [complete_dr, complete_hospital, complete_lab] = await Promise.all([
+      prisma.doctor_details.findMany({
+        where: { NOT: [{ status: "Y" }] },
+        orderBy: { datetime: "asc" },
+      }),
+      prisma.hospital_details.findMany({
+        where: { NOT: [{ status: "Y" }] },
+        orderBy: { datetime: "asc" },
+      }),
+      prisma.lab_details.findMany({
+        where: { NOT: [{ status: "Y" }] },
+        orderBy: { datetime: "asc" },
+      }),
+    ]);
 
-    const complete_hospital = await prisma.hospital_details.findMany({
-      where: {
-        OR: [{ status: "P" }, { status: null }],
-      },
-      orderBy: {
-        datetime: "asc",
-      },
-    });
+    // Helper function to process doctor and lab data
+    const processData = (data, type) => {
+      return data.map((item) => ({
+        ...item,
+        type,
+        email: safeDecrypt(item?.email, secretKey), 
+        phone_no: safeDecrypt(item?.phone_no, secretKey),
+        registration_no: safeDecrypt(item?.registration_no, secretKey), 
+      }));
+    };
 
-    const complete_lab = await prisma.lab_details.findMany({
-      where: {
-        OR: [{ status: "P" }, { status: null }],
-      },
-      orderBy: {
-        datetime: "asc",
-      },
-    });
+ 
 
-    const complete_data = await prisma.user_details.findMany({
-      where: {
-        OR: [{ status: "P" }, { status: null }],
-      },
-      orderBy: {
-        datetime: "asc",
-      },
-    });
-
+    // Combine and process all data
     const combined_data = [
-      ...complete_dr.map((dr) => ({ ...dr, type: "Doctor" })),
-      ...complete_hospital.map((hospital) => ({
-        ...hospital,
-        type: "Hospital",
-      })),
-      ...complete_lab.map((lab) => ({ ...lab, type: "Laboratory" })),
-      ...complete_data.map((user) => ({ ...user, type: "User" })),
+      ...processData(complete_dr, "Doctor"),
+      ...processData(complete_hospital, "Hospital"),
+      ...processData(complete_lab, "Laboratory"),
     ];
 
+    // Function to calculate status counts
+    const calculateStatusCounts = (data) => {
+      return data.reduce(
+        (counts, item) => {
+          if (item.status === "N") {
+            counts.N += 1;
+          } else if (item.status === "P" || item.status === null) {
+            counts.P += 1;
+          } else {
+            counts.other += 1;
+          }
+          return counts;
+        },
+        { N: 0, P: 0, other: 0 }
+      );
+    };
+    const totalStatusCounts = calculateStatusCounts([
+      ...complete_dr,
+      ...complete_hospital,
+      ...complete_lab,
+    ]);
+  
+   
     if (combined_data.length > 0) {
       response.status(200).json({
         success: true,
         data: combined_data,
+        statusCounts: totalStatusCounts,
       });
     } else {
       response.status(400).json({
@@ -2998,15 +3115,15 @@ const getunapproveuser = async (request, response) => {
       });
     }
   } catch (error) {
-    logger.error(
-      `Internal server error: ${error.message} in getunapproveuser API`
-    );
+    // Log and respond with error
+    logger.error(`Internal server error: ${error.message} in getunapproveuser API`);
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect();
+    await prisma.$disconnect(); // Ensure Prisma client is disconnected
   }
 };
+
 
 const approveuser = async (request, response) => {
   try {
