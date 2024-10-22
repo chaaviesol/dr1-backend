@@ -11,7 +11,7 @@ require("dotenv").config();
 const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
-const { error } = require("console");
+
 
 const addadmin = async (request, response) => {
   try {
@@ -1235,23 +1235,23 @@ const messagesave = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
     const { name, contact_number, type } = request.body;
-   
+
     if (!name || !contact_number || !type) {
       return response.status(400).json({
         message: "required fields can't be null",
       });
     }
-     const mobileNumber = contact_number;
+    const mobileNumber = contact_number;
     if (validateMobileNumber(mobileNumber)) {
-      console.log('Valid mobile number');
+      console.log("Valid mobile number");
     } else {
-      console.log('Invalid mobile number');
-      const resptext = "Invalid mobile number"
+      console.log("Invalid mobile number");
+      const resptext = "Invalid mobile number";
       return response.status(401).json({
         error: true,
         success: false,
-        message: resptext
-      })
+        message: resptext,
+      });
     }
     function validateMobileNumber(mobileNumber) {
       // Regular expression for a valid 10-digit Indian mobile number
@@ -1282,10 +1282,10 @@ const messagesave = async (request, response) => {
           contact_no: contact_number.toString(),
           created_date: datetime,
           type: type,
-          status:"requested"
+          status: "requested",
         },
       });
-    
+
       if (adddata) {
         response.status(200).json({
           success: true,
@@ -1313,9 +1313,9 @@ const messagesave = async (request, response) => {
 const getchatdata = async (request, response) => {
   try {
     const getdata = await prisma.chat_data.findMany({
-      orderBy:{
-        created_date:"desc"
-      }
+      orderBy: {
+        created_date: "desc",
+      },
     });
     if (getdata.length > 0) {
       return response.status(200).json({
@@ -1341,23 +1341,26 @@ const getchatdata = async (request, response) => {
   }
 };
 
-const chatstatusupdate=async (request, response) => {
+const chatstatusupdate = async (request, response) => {
   try {
-    const {status,id}=request.body
-    if(!status ||!id){
+    const { status, id, remarks, scheduled_Date } = request.body;
+    if (!status || !id) {
       response.status(400).json({
         message: "Required fields can't be null",
         success: false,
-        error:true
+        error: true,
       });
     }
     const getdata = await prisma.chat_data.update({
-      where:{
-        id:id
+      where: {
+        id: id,
       },
-      data:{
-        status:status
-      }
+      data: {
+        status: status,
+        remarks,
+        st_modifiedDate: istDate,
+        scheduled_Date,
+      },
     });
     if (getdata) {
       return response.status(200).json({
@@ -1383,6 +1386,8 @@ const chatstatusupdate=async (request, response) => {
   }
 };
 
+
+
 //admin get all details of health partners
 const getalldatas = async (request, response) => {
   try {
@@ -1405,7 +1410,7 @@ const getalldatas = async (request, response) => {
           id: true,
           name: true,
           pincode: true,
-          gender:true,
+          gender: true,
           email: true,
           specialization: true,
           datetime: true,
@@ -1571,5 +1576,5 @@ module.exports = {
   messagesave,
   getchatdata,
   getalldatas,
-  chatstatusupdate
+  chatstatusupdate,
 };
