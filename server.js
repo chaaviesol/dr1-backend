@@ -20,6 +20,7 @@ const OpinionRouter = require("./routes/secondopinion/secondopinion.routes");
 const productRouter = require("./routes/productcategory/productcategory.routes");
 const CareerRouter = require("./routes/careerAndhomservices/career.routes");
 const medoneRouter = require("./routes/medOne/medone.routes");
+const googleMapRouter=require("./routes/googleMap/googlemap.routes")
 
 server.use(
   cors({
@@ -45,6 +46,7 @@ server.use("/secondop", OpinionRouter);
 server.use("/product", productRouter);
 server.use("/career",CareerRouter)
 server.use("/medone",medoneRouter)
+server.use("/googlemap",googleMapRouter)
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
