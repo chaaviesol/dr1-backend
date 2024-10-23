@@ -1245,18 +1245,32 @@ const refillNotification = async(request,response)=>{
     })
     console.log({findMedicines})
     const medicineCount = []
+    const notifications =[]
     for(let i=0; i<findMedicines.length;i++){
       const timeTable_id = findMedicines[i].id
       console.log({timeTable_id})
+      const medicine = findMedicines[i].medicine
+      console.log({medicine})
       const quantity =findMedicines[i].totalQuantity
       console.log({quantity})
       
       const medicationData = await prisma.medication_records.count({
         where:{
-          timetable_id:timeTable_id
-        }
+          timetable_id:timeTable_id,
+          taken_status:"Taken"
+        },
+        
       })
       console.log({medicationData})
+
+      const remainingQuantity = quantity - medicationData
+      console.log({remainingQuantity})
+      if (remainingQuantity <= quantity * 0.25) {
+        notifications.push({
+          medicineId: timeTable_id,
+          message: `Refill needed for medicine ${findMedicines[i].medicine[0].name}, only 25% remaining.`,
+        });
+      }
      
       medicineCount.push(medicationData)
     }
@@ -1264,8 +1278,9 @@ const refillNotification = async(request,response)=>{
       error:false,
       success:true,
       message:"Successfull",
-      data:findMedicines,
-      medicineCount:medicineCount
+      // data: findMedicines,
+      // medicineCount: medicineCount,
+      notifications: notifications,
     })
     
   }catch (error) {
