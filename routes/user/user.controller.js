@@ -929,7 +929,7 @@ const login = async (request, response) => {
           id: true,
           email: true,
           status: true,
-          password:true
+          password: true,
         },
       });
       if (doctor) {
@@ -948,7 +948,7 @@ const login = async (request, response) => {
           id: true,
           email: true,
           status: true,
-          password:true
+          password: true,
         },
       });
       if (hospital) {
@@ -967,7 +967,7 @@ const login = async (request, response) => {
           id: true,
           email: true,
           status: true,
-          password:true
+          password: true,
         },
       });
       if (lab) {
@@ -2544,8 +2544,7 @@ const Doctorafterconsult = async (request, response) => {
     });
 
     if (interactions.length === 0) {
-      return response.status(404).json({
-        error: true,
+      return response.status(204).json({
         message:
           "No consultations found for this user greater than 72 hours ago",
       });
@@ -2999,7 +2998,6 @@ const afterconsultupdate = async (request, response) => {
 //       },
 //     });
 
-
 //     const combined_data = [
 //       ...complete_dr.map((dr) => ({ ...dr, type: "Doctor",email:safeDecrypt(dr?.email),phone_no:safeDecrypt(dr?.phone_no),registration_no:safeDecrypt(dr?.registration_no) })),
 //       ...complete_hospital.map((hospital) => ({
@@ -3064,13 +3062,11 @@ const getunapproveuser = async (request, response) => {
       return data.map((item) => ({
         ...item,
         type,
-        email: safeDecrypt(item?.email, secretKey), 
+        email: safeDecrypt(item?.email, secretKey),
         phone_no: safeDecrypt(item?.phone_no, secretKey),
-        registration_no: safeDecrypt(item?.registration_no, secretKey), 
+        registration_no: safeDecrypt(item?.registration_no, secretKey),
       }));
     };
-
- 
 
     // Combine and process all data
     const combined_data = [
@@ -3100,8 +3096,7 @@ const getunapproveuser = async (request, response) => {
       ...complete_hospital,
       ...complete_lab,
     ]);
-  
-   
+
     if (combined_data.length > 0) {
       response.status(200).json({
         success: true,
@@ -3116,14 +3111,15 @@ const getunapproveuser = async (request, response) => {
     }
   } catch (error) {
     // Log and respond with error
-    logger.error(`Internal server error: ${error.message} in getunapproveuser API`);
+    logger.error(
+      `Internal server error: ${error.message} in getunapproveuser API`
+    );
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect(); // Ensure Prisma client is disconnected
   }
 };
-
 
 const approveuser = async (request, response) => {
   try {

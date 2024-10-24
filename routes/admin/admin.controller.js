@@ -1342,6 +1342,8 @@ const getchatdata = async (request, response) => {
 };
 
 const chatstatusupdate = async (request, response) => {
+  console.log(request.body)
+  console.log({istDate})
   try {
     const { status, id, remarks, scheduled_Date } = request.body;
     if (!status || !id) {

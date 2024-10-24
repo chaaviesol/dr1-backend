@@ -140,7 +140,7 @@ model doctor_details{
     last_active             DateTime?
     status                  String?
     image                   String? 
-    health_condition        String?
+    health_condition        Json?
     height                  String?
     weight                  String?
     googleId                String?               
@@ -565,6 +565,7 @@ model medicine_timetable {
   takingQuantity        String?
   daysInterval          String? 
   created_date          DateTime?
+  active_status         String?
   user_id               user_details? @relation(fields: [userId],references: [id])
 }
 
@@ -597,3 +598,10 @@ model career_category{
     modified_date          DateTime?
 }
 
+model notification{
+  id                     Int                       @id @default(autoincrement())
+  user_id                Int?
+  message                String?
+  status                 String?
+  
+   }

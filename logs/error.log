@@ -42,3 +42,12 @@
 {"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-23T12:06:08.867Z"}
 {"level":"error","message":"user_id, prod_id, or quantity is undefined in addToCart API","timestamp":"2024-10-23T12:06:18.602Z"}
 {"level":"error","message":"user_id, prod_id, or quantity is undefined in addToCart API","timestamp":"2024-10-23T12:06:25.784Z"}
+{"level":"error","message":"Internal server error: Cannot set headers after they are sent to the client in admin-chatstatusupdate api","timestamp":"2024-10-24T07:07:45.945Z"}
+{"level":"error","message":"Internal server error: Cannot set headers after they are sent to the client in admin-chatstatusupdate api","timestamp":"2024-10-24T07:08:54.893Z"}
+{"level":"error","message":"Internal server error: Cannot set headers after they are sent to the client in admin-chatstatusupdate api","timestamp":"2024-10-24T07:10:03.328Z"}
+{"level":"error","message":"Internal server error: Cannot set headers after they are sent to the client in admin-chatstatusupdate api","timestamp":"2024-10-24T07:13:19.163Z"}
+{"level":"error","message":"Internal server error: Cannot set headers after they are sent to the client in admin-chatstatusupdate api","timestamp":"2024-10-24T07:23:35.348Z"}
+{"level":"error","message":"Internal server error: \nInvalid `prisma.chat_data.update()` invocation in\nC:\\Users\\dell\\Desktop\\doc_be_newrepo\\dr1-backend\\routes\\admin\\admin.controller.js:1356:44\n\n  1353     error: true,\n  1354   });\n  1355 }\n→ 1356 const getdata = await prisma.chat_data.update({\n         where: {\n           id: 54\n         },\n         data: {\n           status: \"scheduled\",\n           remarks: \"\",\n           st_modifiedDate: new Date(\"2024-10-24T12:54:08.170Z\"),\n           scheduled_Date: \"2024-10-26T05:25:00.000\"\n                           ~~~~~~~~~~~~~~~~~~~~~~~~~\n         }\n       })\n\nInvalid value for argument `scheduled_Date`: premature end of input. Expected ISO-8601 DateTime. in admin-chatstatusupdate api","timestamp":"2024-10-24T07:32:13.139Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-24T09:01:27.435Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-24T09:01:28.464Z"}
+{"level":"error","message":"user_id is undefined in getCart API","timestamp":"2024-10-24T09:01:30.508Z"}
