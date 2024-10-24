@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { logger } = require("../../utils");
 require("dotenv").config();
 
 const getCurrentLocation = async (req, res) => {
@@ -13,10 +14,38 @@ const getCurrentLocation = async (req, res) => {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
     const response = await axios.get(geocodeUrl);
-    console.log("response",response.data.results)
+
     if (response.data.status === "OK") {
-      const address = response.data.results[0].formatted_address;
-      return res.status(200).json({ success: true, data: address });
+      const addressComponents = response.data.results[0].address_components;
+      const formattedAddress = response.data.results[0].formatted_address;
+      let country, state, city, streetAddress, postalCode;
+
+      for (let component of addressComponents) {
+        if (component.types.includes("country")) {
+          country = component.long_name;
+        }
+        if (component.types.includes("administrative_area_level_1")) {
+          state = component.long_name;
+        }
+        if (component.types.includes("locality")) {
+          city = component.long_name;
+        }
+        if (component.types.includes("route")) {
+          streetAddress = component.long_name;
+        }
+        if (component.types.includes("postal_code")) {
+          postalCode = component.long_name;
+        }
+      }
+
+      return res.status(200).json({
+        postalCode,
+        country,
+        state,
+        city,
+        streetAddress,
+        formattedAddress
+      });
     } else {
       logger.error(`Geocoding failed in google map  API`);
       return res
