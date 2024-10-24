@@ -17,8 +17,9 @@ const getCurrentLocation = async (req, res) => {
 
     if (response.data.status === "OK") {
       const addressComponents = response.data.results[0].address_components;
+      // console.log({addressComponents})
       const formattedAddress = response.data.results[0].formatted_address;
-      let country, state, city, streetAddress, postalCode;
+      let country, state, city, streetAddress,sublocalityLevel_1,sublocalityLevel_2, postalCode;
 
       for (let component of addressComponents) {
         if (component.types.includes("country")) {
@@ -30,6 +31,12 @@ const getCurrentLocation = async (req, res) => {
         if (component.types.includes("locality")) {
           city = component.long_name;
         }
+        if (component.types.includes("sublocality_level_1")) {
+          sublocalityLevel_1 = component.long_name;
+        }
+        if (component.types.includes("sublocality_level_2")) {
+          sublocalityLevel_2 = component.long_name;
+        }
         if (component.types.includes("route")) {
           streetAddress = component.long_name;
         }
@@ -39,12 +46,14 @@ const getCurrentLocation = async (req, res) => {
       }
 
       return res.status(200).json({
-        postalCode,
-        country,
-        state,
-        city,
         streetAddress,
-        formattedAddress
+        sublocalityLevel_1,
+        sublocalityLevel_2,
+        city,
+        postalCode,
+        state,
+        country,
+        formattedAddress,
       });
     } else {
       logger.error(`Geocoding failed in google map  API`);
