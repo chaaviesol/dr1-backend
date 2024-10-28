@@ -12,7 +12,6 @@ const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 const path = require("path");
 
-
 const addadmin = async (request, response) => {
   try {
     console.log("object", request.body);
@@ -1313,6 +1312,9 @@ const messagesave = async (request, response) => {
 const getchatdata = async (request, response) => {
   try {
     const getdata = await prisma.chat_data.findMany({
+      where: {
+        status: { notIn: ["onboarded", "wrongnumber"] },
+      },
       orderBy: {
         created_date: "desc",
       },
@@ -1342,8 +1344,8 @@ const getchatdata = async (request, response) => {
 };
 
 const chatstatusupdate = async (request, response) => {
-  console.log(request.body)
-  console.log({istDate})
+  console.log(request.body);
+  console.log({ istDate });
   try {
     const { status, id, remarks, scheduled_Date } = request.body;
     if (!status || !id) {
@@ -1387,8 +1389,6 @@ const chatstatusupdate = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
-
 
 //admin get all details of health partners
 const getalldatas = async (request, response) => {
