@@ -2961,73 +2961,6 @@ const afterconsultupdate = async (request, response) => {
 
 ///////////////user approval/////////////
 
-// const getunapproveuser = async (request, response) => {
-//   const secretKey = process.env.ENCRYPTION_KEY;
-//   const safeDecrypt = (text, key) => {
-//     try {
-//       return decrypt(text, key);
-//     } catch (err) {
-//       return text;
-//     }
-//   };
-//   try {
-//     const complete_dr = await prisma.doctor_details.findMany({
-//       where: {
-//         NOT: [{ status: "Y" }],
-//       },
-//       orderBy: {
-//         datetime: "asc",
-//       },
-//     });
-
-//     const complete_hospital = await prisma.hospital_details.findMany({
-//       where: {
-//         NOT: [{ status: "Y" }],
-//       },
-//       orderBy: {
-//         datetime: "asc",
-//       },
-//     });
-
-//     const complete_lab = await prisma.lab_details.findMany({
-//       where: {
-//         NOT: [{ status: "Y" }],
-//       },
-//       orderBy: {
-//         datetime: "asc",
-//       },
-//     });
-
-//     const combined_data = [
-//       ...complete_dr.map((dr) => ({ ...dr, type: "Doctor",email:safeDecrypt(dr?.email),phone_no:safeDecrypt(dr?.phone_no),registration_no:safeDecrypt(dr?.registration_no) })),
-//       ...complete_hospital.map((hospital) => ({
-//         ...hospital,
-//         type: "Hospital",
-//       })),
-//       ...complete_lab.map((lab) => ({ ...lab, type: "Laboratory" }))
-//     ];
-
-//     if (combined_data.length > 0) {
-//       response.status(200).json({
-//         success: true,
-//         data: combined_data,
-//       });
-//     } else {
-//       response.status(400).json({
-//         error: true,
-//         message: "No Data",
-//       });
-//     }
-//   } catch (error) {
-//     logger.error(
-//       `Internal server error: ${error.message} in getunapproveuser API`
-//     );
-//     console.error(error);
-//     response.status(500).json({ error: "Internal Server Error" });
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// };
 const getunapproveuser = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
 
@@ -3057,22 +2990,31 @@ const getunapproveuser = async (request, response) => {
       }),
     ]);
 
-    // Helper function to process doctor and lab data
-    const processData = (data, type) => {
-      return data.map((item) => ({
-        ...item,
-        type,
-        email: safeDecrypt(item?.email, secretKey),
-        phone_no: safeDecrypt(item?.phone_no, secretKey),
-        registration_no: safeDecrypt(item?.registration_no, secretKey),
-      }));
+    // Helper function to process doctor, hospital, and lab data
+    const processData = async (data, type) => {
+      return Promise.all(
+        data.map(async (item) => {
+          const location = await prisma.pincode_data.findFirst({
+            where: { pincode: parseInt(item?.pincode) },
+          });
+          return {
+            ...item,
+            type,
+            email: safeDecrypt(item?.email, secretKey),
+            phone_no: safeDecrypt(item?.phone_no, secretKey),
+            registration_no: safeDecrypt(item?.registration_no, secretKey),
+            location: location?.district || null,
+            doctor_type: item?.type,
+          };
+        })
+      );
     };
 
     // Combine and process all data
     const combined_data = [
-      ...processData(complete_dr, "Doctor"),
-      ...processData(complete_hospital, "Hospital"),
-      ...processData(complete_lab, "Laboratory"),
+      ...(await processData(complete_dr, "Doctor")),
+      ...(await processData(complete_hospital, "Hospital")),
+      ...(await processData(complete_lab, "Laboratory")),
     ];
 
     // Function to calculate status counts
@@ -3117,9 +3059,102 @@ const getunapproveuser = async (request, response) => {
     console.error(error);
     response.status(500).json({ error: "Internal Server Error" });
   } finally {
-    await prisma.$disconnect(); // Ensure Prisma client is disconnected
+    prisma.$disconnect(); // Ensure Prisma client is disconnected
   }
 };
+
+// const getunapproveuser = async (request, response) => {
+//   const secretKey = process.env.ENCRYPTION_KEY;
+
+//   // Safe decryption function
+//   const safeDecrypt = (text, key) => {
+//     try {
+//       return decrypt(text, key); // Replace 'decrypt' with your actual decryption function
+//     } catch (err) {
+//       return text; // Return original text if decryption fails
+//     }
+//   };
+
+//   try {
+//     // Fetch data in parallel using Promise.all
+//     const [complete_dr, complete_hospital, complete_lab] = await Promise.all([
+//       prisma.doctor_details.findMany({
+//         where: { NOT: [{ status: "Y" }] },
+//         orderBy: { datetime: "asc" },
+//       }),
+//       prisma.hospital_details.findMany({
+//         where: { NOT: [{ status: "Y" }] },
+//         orderBy: { datetime: "asc" },
+//       }),
+//       prisma.lab_details.findMany({
+//         where: { NOT: [{ status: "Y" }] },
+//         orderBy: { datetime: "asc" },
+//       }),
+//     ]);
+
+//     // Helper function to process doctor and lab data
+//     const processData = (data, type) => {
+//       return data.map((item) => ({
+//         ...item,
+//         type,
+//         email: safeDecrypt(item?.email, secretKey),
+//         phone_no: safeDecrypt(item?.phone_no, secretKey),
+//         registration_no: safeDecrypt(item?.registration_no, secretKey),
+//       }));
+//     };
+
+//     // Combine and process all data
+//     const combined_data = [
+//       ...processData(complete_dr, "Doctor"),
+//       ...processData(complete_hospital, "Hospital"),
+//       ...processData(complete_lab, "Laboratory"),
+//     ];
+
+//     // Function to calculate status counts
+//     const calculateStatusCounts = (data) => {
+//       return data.reduce(
+//         (counts, item) => {
+//           if (item.status === "N") {
+//             counts.N += 1;
+//           } else if (item.status === "P" || item.status === null) {
+//             counts.P += 1;
+//           } else {
+//             counts.other += 1;
+//           }
+//           return counts;
+//         },
+//         { N: 0, P: 0, other: 0 }
+//       );
+//     };
+//     const totalStatusCounts = calculateStatusCounts([
+//       ...complete_dr,
+//       ...complete_hospital,
+//       ...complete_lab,
+//     ]);
+
+//     if (combined_data.length > 0) {
+//       response.status(200).json({
+//         success: true,
+//         data: combined_data,
+//         statusCounts: totalStatusCounts,
+//       });
+//     } else {
+//       response.status(400).json({
+//         error: true,
+//         message: "No Data",
+//       });
+//     }
+//   } catch (error) {
+//     // Log and respond with error
+//     logger.error(
+//       `Internal server error: ${error.message} in getunapproveuser API`
+//     );
+//     console.error(error);
+//     response.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect(); // Ensure Prisma client is disconnected
+//   }
+// };
 
 const approveuser = async (request, response) => {
   try {
