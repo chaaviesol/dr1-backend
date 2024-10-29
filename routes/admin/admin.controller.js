@@ -1310,6 +1310,10 @@ const messagesave = async (request, response) => {
 };
 
 const getchatdata = async (request, response) => {
+  const currentDate = new Date();
+  const istOffset = 5 * 60 * 60 * 1000 + 30 * 60 * 1000;
+  const istDate = new Date(currentDate.getTime() + istOffset);
+  const today = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate());
   try {
     const getdata = await prisma.chat_data.findMany({
       where: {
@@ -1319,10 +1323,23 @@ const getchatdata = async (request, response) => {
         created_date: "desc",
       },
     });
+    const todayScheduled = [];
     if (getdata.length > 0) {
+      getdata.forEach((item) => {
+        if (item.scheduled_Date) {
+          const scheduledDate = new Date(item.scheduled_Date);
+          const scheduledOnlyDate = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+          if (scheduledOnlyDate.getTime() === today.getTime()) {
+            todayScheduled.push(item);
+          }
+        }
+      });
+      console.log({todayScheduled})
       return response.status(200).json({
         success: true,
         data: getdata,
+        allgetdata: getdata.length,
+        todayScheduled: todayScheduled,
       });
     } else {
       return response.status(204).json({
@@ -1344,8 +1361,6 @@ const getchatdata = async (request, response) => {
 };
 
 const chatstatusupdate = async (request, response) => {
-  console.log(request.body);
-  console.log({ istDate });
   try {
     const { status, id, remarks, scheduled_Date } = request.body;
     if (!status || !id) {
