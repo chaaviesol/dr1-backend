@@ -295,91 +295,81 @@ const doctor_login = async (req, res) => {
 //getting all active doctors
 
 const get_doctors = async (req, res) => {
-  const secretKey = process.env.ENCRYPTION_KEY;
-
-  // Helper function to handle decryption with fallback
-  const safeDecrypt = (text, key) => {
-    try {
-      return decrypt(text, key);
-    } catch (err) {
-      return text;
-    }
-  };
-
-  try {
-    // Fetch doctor details
+  try {    
     const complete_data = await prisma.doctor_details.findMany({
       where: { OR: [{ status: "Y" }, { status: null }] },
-      orderBy: {
-        name: "asc",
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        second_name: true,
+        phone_office: true,
+        image: true,
+        education_qualification: true,
+        additional_qualification: true,
+        specialization: true,
+        additional_speciality: true,
+        type: true,
+        gender: true,
+        address: true,
+        experience: true,
+        sector: true,
+        pincode: true,
+        about: true,
+        rating: true,
+        doctor_hospitalId: {
+          select: {
+            hospitalid: {
+              select: {
+                pincode: true,
+              },
+            },
+          },
+        },
+        feedback: {
+          where: { status: "accepted" },
+          select: { rating: true },
+        },
       },
     });
 
-    // Decrypt data and calculate average ratings
-    for (const doctor of complete_data) {
-      const decrypted_doctor = {
-        ...doctor,
-        phone_no: safeDecrypt(doctor.phone_no, secretKey),
-        registration_no: safeDecrypt(doctor.registration_no, secretKey),
-      };
+    const updatePromises = complete_data.map(async (doctor) => {
+      const pincodes = [
+        doctor.pincode,
+        ...doctor.doctor_hospitalId.map((entry) => entry.hospitalid?.pincode),
+      ].filter((pincode) => pincode !== null);
 
-      // Fetch feedback for the doctor
-      const feedbacks = await prisma.doctor_feedback.findMany({
-        where: {
-          doctor_id: doctor.id,
-          status: "accepted",
-        },
-        orderBy: {
-          created_date: "desc",
-        },
-        select: {
-          message: true,
-          userid: {
-            select: {
-              name: true,
-            },
-          },
-          rating: true,
-          created_date: true,
-        },
-      });
-
-      // Decrypt feedback data
-      const decrypted_feedbacks = feedbacks.map((feedback) => ({
-        ...feedback,
-        userid: {
-          ...feedback.userid,
-          name: safeDecrypt(feedback.userid.name, secretKey),
-        },
-      }));
-
-      // Calculate the sum and average of the ratings
-      const totalRatings = decrypted_feedbacks.reduce(
-        (sum, feedback) => sum + feedback.rating,
+      // Calculate the average rating from feedback
+      const totalRatings = doctor.feedback.reduce(
+        (sum, { rating }) => sum + rating,
         0
       );
       const averageRating =
-        decrypted_feedbacks.length > 0
-          ? (totalRatings / decrypted_feedbacks.length).toFixed(1)
+        doctor.feedback.length > 0
+          ? (totalRatings / doctor.feedback.length).toFixed(1)
           : 0;
 
-      // Update the doctor's rating in the doctor_details table
       await prisma.doctor_details.update({
         where: { id: doctor.id },
         data: { rating: averageRating.toString() },
       });
 
-      decrypted_doctor.rating = averageRating;
+      return {
+        ...doctor,
+        pincodes,
+        rating: averageRating,
+        doctor_hospitalId: undefined,
+        feedback: undefined,
+      };
+    });
 
-      // Add the decrypted feedbacks to the doctor object if needed
-      decrypted_doctor.feedbacks = decrypted_feedbacks;
-    }
+    const processed_data = await Promise.all(updatePromises);
 
     res.status(200).json({
       error: false,
       success: true,
       message: "successful",
-      data: complete_data,
+      data: processed_data,
     });
   } catch (error) {
     logger.error(`Internal server error: ${error.message} in get_doctors API`);

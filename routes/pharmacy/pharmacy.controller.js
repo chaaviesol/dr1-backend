@@ -946,7 +946,7 @@ const checkaddress = async (request, response) => {
 };
 
 const updatesalesorder = async (request, response) => {
-  console.log("updtateeeeeeeeeeeeeeeee", request.body);
+  const datetime = getCurrentDateInIST();
   try {
     const { sales_id, status } = request.body;
     if (!sales_id || !status) {
@@ -961,9 +961,9 @@ const updatesalesorder = async (request, response) => {
       },
       data: {
         so_status: status,
+        updated_date: datetime,
       },
     });
-    console.log({ change });
     if (change) {
       return response.status(200).json({
         message: `successfully updated`,
@@ -1199,6 +1199,7 @@ const myorders = async (request, response) => {
         delivery_address: true,
         created_date: true,
         contact_no: true,
+        updated_date:true,
         pincode: true,
         sales_list: {
           select: {
