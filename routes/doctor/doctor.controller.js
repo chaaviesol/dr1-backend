@@ -295,7 +295,7 @@ const doctor_login = async (req, res) => {
 //getting all active doctors
 
 const get_doctors = async (req, res) => {
-  try {    
+  try {
     const complete_data = await prisma.doctor_details.findMany({
       where: { OR: [{ status: "Y" }, { status: null }] },
       orderBy: { name: "asc" },
@@ -719,6 +719,7 @@ const suggest_postname_district = async (req, res) => {
       },
     });
     const suggest_item = [...suggest_item_postname, ...suggest_item_district];
+
     res.status(200).json({
       error: false,
       success: true,
@@ -736,113 +737,280 @@ const suggest_postname_district = async (req, res) => {
 };
 
 //for getting pincode
+// const get_pincode = async (req, res) => {
+//   console.log("suggestttttttt",req.body)
+//   try {
+//     const { selectedArea_id } = req.body;
+
+//     const get_postalData = await prisma.pincode_data.findMany({
+//       where: {
+//         id: selectedArea_id,
+//       },
+//     });
+
+//     const result = get_postalData[0].pincode;
+
+//     const get_doctorDetails = await prisma.doctor_details.findMany({
+//       where: {
+//         OR:[
+//         pincode: result,
+//         doctor_hospitalId: {
+//           select: {
+//             hospitalid: {
+//               select: {
+//                 pincode: true,
+//               },
+//             },
+//           },
+//         },
+//       ]
+//       },
+//     });
+//     let featured_partner = [];
+//     let not_featured_partner = [];
+//     if (get_doctorDetails.length > 0) {
+//       for (i = 0; i < get_doctorDetails.length; i++) {
+//         if (get_doctorDetails[i].featured_partner === true) {
+//           featured_partner.push(get_doctorDetails[i]);
+//         } else {
+//           not_featured_partner.push(get_doctorDetails[i]);
+//         }
+//       }
+//       return res.status(200).json({
+//         error: false,
+//         success: true,
+//         message: "successfull",
+//         data: [...featured_partner, ...not_featured_partner],
+//       });
+//     }
+//     let nearByData = [];
+//     let nearBy_notfeatured = [];
+//     let samePinData = [];
+//     let nearByData_featured = [];
+//     if (get_doctorDetails.length === 0) {
+//       let suggestedpincodes = [
+//         result - 1,
+//         result + 1,
+//         result - 2,
+//         result + 2,
+//         result - 3,
+//         result + 3,
+//         result - 4,
+//         result + 4,
+//       ];
+//       // for(let i=result-4; i<=result+4; i++){
+//       //     suggestedpincodes.push(i)
+//       // }
+
+//       for (i = 0; i < suggestedpincodes.length; i++) {
+//         const nearBypincode = await prisma.doctor_details.findMany({
+//           where: {
+//             pincode: suggestedpincodes[i],
+//           },
+//         });
+//         if (nearBypincode.length > 0) {
+//           for (j = 0; j < nearBypincode.length; j++) {
+//             if (nearBypincode[j].featured_partner === true) {
+//               nearByData.push(nearBypincode[j]);
+//             } else {
+//               nearBy_notfeatured.push(nearBypincode[j]);
+//             }
+//           }
+
+//           samePinData = [...nearByData, ...nearBy_notfeatured];
+
+//           for (k = 0; k < samePinData.length; k++) {
+//             nearByData_featured.push(samePinData[k]);
+//           }
+//           nearByData = [];
+//           nearBy_notfeatured = [];
+//         }
+//         //  ggg.push(samePinData)
+
+//         if (nearByData_featured.length > 0) {
+//           return res.status(200).json({
+//             error: false,
+//             success: true,
+//             message: "successfull",
+//             data: nearByData_featured,
+//           });
+//         } else {
+//           // const get_completeDr = await prisma.doctor_details.findMany()
+//           return res.status(404).json({
+//             error: true,
+//             success: false,
+//             // data:get_completeDr,
+//             message: "No data found",
+//           });
+//         }
+//       }
+//     }
+
+//     res.status(200).json({
+//       error: false,
+//       success: true,
+//       message: "successfull",
+//       data: nearByData_featured,
+//     });
+//   } catch (error) {
+//     logger.error(`Internal server error: ${error.message} in get_pincode API`);
+
+//     res.status(500).json({ error: "Internal Server Error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
 const get_pincode = async (req, res) => {
   try {
     const { selectedArea_id } = req.body;
 
-    const get_postalData = await prisma.pincode_data.findMany({
+    // Fetch postal data based on the selected area ID
+    const postalData = await prisma.pincode_data.findUnique({
       where: {
         id: selectedArea_id,
       },
     });
 
-    const result = get_postalData[0].pincode;
+    if (!postalData) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "Postal data not found",
+      });
+    }
 
-    const get_doctorDetails = await prisma.doctor_details.findMany({
+    const pincode = postalData.pincode;
+
+    // Fetch doctor details based on pincode or associated hospital pincode
+    const doctorDetails = await prisma.doctor_details.findMany({
       where: {
-        pincode: result,
+        OR: [
+          { pincode }, // Direct match on the pincode field of doctor_details
+          {
+            doctor_hospitalId: {
+              some: {
+                hospitalid: {
+                  pincode: pincode, // Match on the pincode field of hospital_details
+                },
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        second_name: true,
+        phone_office: true,
+        image: true,
+        education_qualification: true,
+        additional_qualification: true,
+        specialization: true,
+        additional_speciality: true,
+        type: true,
+        gender: true,
+        address: true,
+        experience: true,
+        sector: true,
+        pincode: true,
+        about: true,
+        rating: true,
+        featured_partner: true,
       },
     });
-    let featured_partner = [];
-    let not_featured_partner = [];
-    if (get_doctorDetails.length > 0) {
-      for (i = 0; i < get_doctorDetails.length; i++) {
-        if (get_doctorDetails[i].featured_partner === true) {
-          featured_partner.push(get_doctorDetails[i]);
-        } else {
-          not_featured_partner.push(get_doctorDetails[i]);
-        }
-      }
+
+    if (doctorDetails.length > 0) {
+      const featuredDoctors = doctorDetails.filter(
+        (doc) => doc.featured_partner
+      );
+      const nonFeaturedDoctors = doctorDetails.filter(
+        (doc) => !doc.featured_partner
+      );
+
       return res.status(200).json({
         error: false,
         success: true,
-        message: "successfull",
-        data: [...featured_partner, ...not_featured_partner],
+        message: "Successful",
+        data: [...featuredDoctors, ...nonFeaturedDoctors],
       });
     }
-    let nearByData = [];
-    let nearBy_notfeatured = [];
-    let samePinData = [];
-    let nearByData_featured = [];
-    if (get_doctorDetails.length === 0) {
-      let suggestedpincodes = [
-        result - 1,
-        result + 1,
-        result - 2,
-        result + 2,
-        result - 3,
-        result + 3,
-        result - 4,
-        result + 4,
-      ];
-      // for(let i=result-4; i<=result+4; i++){
-      //     suggestedpincodes.push(i)
-      // }
 
-      for (i = 0; i < suggestedpincodes.length; i++) {
-        const nearBypincode = await prisma.doctor_details.findMany({
-          where: {
-            pincode: suggestedpincodes[i],
-          },
-        });
-        if (nearBypincode.length > 0) {
-          for (j = 0; j < nearBypincode.length; j++) {
-            if (nearBypincode[j].featured_partner === true) {
-              nearByData.push(nearBypincode[j]);
-            } else {
-              nearBy_notfeatured.push(nearBypincode[j]);
-            }
-          }
+    // Suggest nearby pincodes if no doctors found in the exact pincode
+    const suggestedPincodes = Array.from({ length: 4 }, (_, i) => [
+      pincode - (i + 1),
+      pincode + (i + 1),
+    ]).flat();
 
-          samePinData = [...nearByData, ...nearBy_notfeatured];
+    let nearByDoctors = [];
 
-          for (k = 0; k < samePinData.length; k++) {
-            nearByData_featured.push(samePinData[k]);
-          }
-          nearByData = [];
-          nearBy_notfeatured = [];
-        }
-        //  ggg.push(samePinData)
+    for (const suggestedPincode of suggestedPincodes) {
+      const doctorsNearby = await prisma.doctor_details.findMany({
+        where: {
+          OR: [
+            { pincode: suggestedPincode },
+            {
+              doctor_hospitalId: {
+                some: {
+                  hospitalid: {
+                    pincode: suggestedPincode,
+                  },
+                },
+              },
+            },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          second_name: true,
+          phone_office: true,
+          image: true,
+          education_qualification: true,
+          additional_qualification: true,
+          specialization: true,
+          additional_speciality: true,
+          type: true,
+          gender: true,
+          address: true,
+          experience: true,
+          sector: true,
+          pincode: true,
+          about: true,
+          rating: true,
+          featured_partner: true,
+        },
+      });
 
-        if (nearByData_featured.length > 0) {
-          return res.status(200).json({
-            error: false,
-            success: true,
-            message: "successfull",
-            data: nearByData_featured,
-          });
-        } else {
-          // const get_completeDr = await prisma.doctor_details.findMany()
-          return res.status(404).json({
-            error: true,
-            success: false,
-            // data:get_completeDr,
-            message: "No data found",
-          });
-        }
+      if (doctorsNearby.length > 0) {
+        nearByDoctors = nearByDoctors.concat(doctorsNearby);
       }
     }
 
-    res.status(200).json({
-      error: false,
-      success: true,
-      message: "successfull",
-      data: nearByData_featured,
+    if (nearByDoctors.length > 0) {
+      const featuredNearByDoctors = nearByDoctors.filter(
+        (doc) => doc.featured_partner
+      );
+      const nonFeaturedNearByDoctors = nearByDoctors.filter(
+        (doc) => !doc.featured_partner
+      );
+      console.log({ nonFeaturedNearByDoctors });
+
+      return res.status(200).json({
+        error: false,
+        success: true,
+        message: "Successful",
+        data: [...featuredNearByDoctors, ...nonFeaturedNearByDoctors],
+      });
+    }
+
+    return res.status(404).json({
+      error: true,
+      success: false,
+      message: "No data found",
     });
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in get_pincode API`);
-
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error(`Internal server error: ${error.message} in get_pincode API`);
+    return res.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
   }
@@ -1514,6 +1682,71 @@ const completeedit = async (req, res) => {
   }
 };
 
+/////////hospital adding by a doctor
+
+const addhospital = async (req, res) => {
+  console.log("adddddddddddd", req.body);
+  const { name, address, contact_no, pincode, type } = req.body;
+
+  const datetime = getCurrentDateInIST();
+  try {
+    const checkPhoneNumber = await prisma.hospital_details.findFirst({
+      where: { contact_no: contact_no },
+    });
+
+    if (checkPhoneNumber) {
+      return res.status(400).json({
+        message: "Phone number already exists",
+        error: true,
+      });
+    }
+
+    const find = await prisma.hospital_details.findFirst({
+      where: {
+        AND: [
+          { name: { equals: name.trim(), mode: "insensitive" } },
+          { pincode: { equals: parseInt(pincode) } },
+        ],
+      },
+    });
+    console.log(find);
+    if (find) {
+      return res.status(400).json({
+        message: "Hospital Already exists",
+        error: true,
+      });
+    }
+    // const register_data = await prisma.hospital_details.create({
+    //   data: {
+    //     name: name,
+    //     address: address,
+    //     contact_no: contact_no,
+    //     datetime: datetime,
+    //     email: emaillower,
+    //     type: type,
+    //     pincode: parseInt(pincode),
+    //     status: "P",
+    //   },
+    // });
+
+    res.status(200).json({
+      error: false,
+      success: true,
+      message: "successfully registered",
+      // data: register_data,
+    });
+    // }
+  } catch (err) {
+    logger.error(
+      `Internal server error: ${err.message} in doctor-addhospital api`
+    );
+    res.status(500).json({
+      error: true,
+      message: "internal server error",
+    });
+  }
+};
+
 module.exports = {
   doctor_registration,
   doctor_login,
@@ -1535,9 +1768,9 @@ module.exports = {
   get_feedback,
   get_searchdata,
   getadoctorfeedback,
-
   doctor_disable,
   getunapprovedrs,
   approvedr,
   completeedit,
+  addhospital,
 };
