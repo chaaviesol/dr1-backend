@@ -63,6 +63,6 @@ DoctorRouter.get("/getunapprovedrs", getunapprovedrs);
 DoctorRouter.post("/approvedr", approvedr);
 DoctorRouter.post("/completeedit", completeedit);
 
-DoctorRouter.post("/addhospital",addhospital)
+DoctorRouter.post("/addhospital",auth,addhospital)
 
 module.exports = DoctorRouter;

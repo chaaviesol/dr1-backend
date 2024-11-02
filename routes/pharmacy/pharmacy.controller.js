@@ -540,7 +540,7 @@ const salesorder = async (request, response) => {
         message: "Please login as a customer",
       });
     }
-    if (!delivery_address || !contact_no ) {
+    if (!delivery_address || !contact_no) {
       return response.status(400).json({
         error: true,
         message: "Missing delivery details",
@@ -1027,26 +1027,64 @@ const medicineadd = async (request, response) => {
 const createinvoice = async (request, response) => {
   try {
     const datetime = getCurrentDateInIST();
-    const { sales_id, sold_by, medication_details } = request.body;
+    const { sales_id, sold_by, medication_details, userId } = request.body;
+
     if (!sales_id || !medication_details || !sold_by) {
       return response.status(400).json({ error: "All fields are required" });
     }
-    // const invoice_no=
-    const create = await prisma.sales_invoice.create({
-      data: {
-        sales_id,
-        sold_by,
-        invoice_no,
-        medication_details,
-        created_date: datetime,
-      },
-    });
-    if (create) {
-      return response.status(200).json({
-        message: "Successfully created",
-        success: true,
+
+    await prisma.$transaction(async (prisma) => {
+      const create = await prisma.sales_invoice.create({
+        data: {
+          sales_id,
+          sold_by,
+          created_date: datetime,
+        },
       });
-    }
+
+      if (create) {
+        for (const medicinedet of medication_details) {
+          const {
+            medicine,
+            afterFd_beforeFd,
+            totalQuantity,
+            timing,
+            takingQuantity,
+            batch_no,
+            selling_price,
+          } = medicinedet;
+
+          await prisma.medicine_timetable.create({
+            data: {
+              userId: userId,
+              medicine: medicine,
+              afterFd_beforeFd,
+              totalQuantity,
+              timing,
+              takingQuantity,
+              app_flag: false,
+              created_date: datetime,
+            },
+          });
+
+          await prisma.sales_list.update({
+            where: {
+              sales_id: sales_id,
+              product_id: medicine?.product_id,
+            },
+            data: {
+              batch_no: batch_no,
+              selling_price: selling_price,
+            },
+          });
+        }
+      }
+    });
+
+    return response.status(200).json({
+      message: "Successfully created",
+      success: true,
+    });
   } catch (error) {
     logger.error(
       `Internal server error: ${error.message} in createinvoice API`
@@ -1062,70 +1100,85 @@ const createinvoice = async (request, response) => {
 const prescriptioninvoice = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
-    const {
-      sales_id,
-      sold_by,
-      medication_details,
-      products,
-      so_status,
-      total_amount,
-    } = request.body;
+    const { sales_id, sold_by, medication_details, total_amount, userId } =
+      request.body;
 
-    if (!sales_id || !medication_details || !sold_by) {
+    if (!sales_id || !medication_details || !userId) {
       return response.status(400).json({ error: "All fields are required" });
     }
 
-    let total_amount_fixed;
-    if (total_amount) {
-      total_amount_fixed = parseFloat(total_amount).toFixed(2);
-    }
+    const total_amount_fixed = total_amount
+      ? parseFloat(total_amount).toFixed(2)
+      : null;
 
     await prisma.$transaction(async (prisma) => {
-      const updatesales_order = await prisma.sales_order.update({
+      await prisma.sales_invoice.create({
+        data: {
+          sales_id,
+          sold_by,
+          created_date: datetime,
+        },
+      });
+
+      await prisma.sales_order.update({
         where: {
           sales_id,
         },
         data: {
           total_amount: total_amount_fixed,
-          so_status: so_status,
-          updated_date: datetime,
         },
       });
 
-      for (let product of products) {
-        const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
+      for (const medicinedet of medication_details) {
+        const {
+          medicine,
+          afterFd_beforeFd,
+          totalQuantity,
+          timing,
+          takingQuantity,
+          batch_no,
+          selling_price,
+          quantity,
+          mrp,
+        } = medicinedet;
+
+        await prisma.medicine_timetable.create({
+          data: {
+            userId: userId,
+            medicine: medicine,
+            afterFd_beforeFd,
+            totalQuantity,
+            timing,
+            takingQuantity,
+            app_flag: false,
+            created_date: datetime,
+          },
+        });
+
+        const net_amount = Number(quantity) * Number(mrp);
 
         await prisma.sales_list.create({
           data: {
             sales_id: sales_id,
             generic_prodid: {
               connect: {
-                id: product.product_id,
+                id: medicine?.product_id,
               },
             },
-            order_qty: parseInt(product.quantity),
+            order_qty: Number(quantity),
             net_amount: net_amount,
             created_date: datetime,
+            batch_no: batch_no,
+            selling_price: selling_price,
           },
         });
       }
+    });
 
-      const create = await prisma.sales_invoice.create({
-        data: {
-          sales_id,
-          sold_by,
-          invoice_no, // Ensure you define `invoice_no` somewhere
-          medication_details,
-          created_date: datetime,
-        },
-      });
 
-      if (create) {
-        return response.status(200).json({
-          message: "Successfully created",
-          success: true,
-        });
-      }
+    response.status(200).json({
+      message: "Successfully created",
+      success: true,
     });
   } catch (error) {
     logger.error(
@@ -1199,7 +1252,7 @@ const myorders = async (request, response) => {
         delivery_address: true,
         created_date: true,
         contact_no: true,
-        updated_date:true,
+        updated_date: true,
         pincode: true,
         sales_list: {
           select: {

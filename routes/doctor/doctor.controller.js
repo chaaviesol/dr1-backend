@@ -1687,6 +1687,7 @@ const completeedit = async (req, res) => {
 const addhospital = async (req, res) => {
   console.log("adddddddddddd", req.body);
   const { name, address, contact_no, pincode, type } = req.body;
+  const doc_id = req.user.userId;
 
   const datetime = getCurrentDateInIST();
   try {
@@ -1709,13 +1710,27 @@ const addhospital = async (req, res) => {
         ],
       },
     });
-    console.log(find);
+
     if (find) {
       return res.status(400).json({
         message: "Hospital Already exists",
         error: true,
       });
     }
+    const findtype = await prisma.doctor_details.findFirst({
+      where: {
+        id: doc_id,
+      },
+      select: {
+        type: true,
+        specialization: true,
+      },
+    });
+
+    const type = findtype?.type;
+    const hospitalspeciality = ["General medicine", findtype?.specialization];
+    console.log({ hospitalspeciality });
+    const hospitalfeature = ["Op", "Other Services "];
     // const register_data = await prisma.hospital_details.create({
     //   data: {
     //     name: name,
@@ -1723,9 +1738,11 @@ const addhospital = async (req, res) => {
     //     contact_no: contact_no,
     //     datetime: datetime,
     //     email: emaillower,
+    //     speciality: hospitalspeciality,
+    //     feature: hospitalfeature,
     //     type: type,
     //     pincode: parseInt(pincode),
-    //     status: "P",
+    //     status: "tobeonboarded",
     //   },
     // });
 
