@@ -1266,8 +1266,25 @@ const nearestlab = async (request, response) => {
       const pincodeInt = parseInt(pincode, 10);
 
       let findlabs = await prisma.lab_details.findMany({
-        where: { pincode: String(pincodeInt) },
+        where: {
+          pincode: String(pincodeInt),
+          status: "Y",
+        },
         orderBy: "asc",
+        select: {
+          id: true,
+          name: true,
+          phone_no: true,
+          address: true,
+          timing: true,
+          email: true,
+          rating: true,
+          photo: true,
+          about: true,
+          services: true,
+          features: true,
+          pincode: true,
+        },
       });
 
       if (findlabs.length >= 3) {
@@ -1286,6 +1303,21 @@ const nearestlab = async (request, response) => {
         findlabs = await prisma.lab_details.findMany({
           where: {
             pincode: { in: pincodeRange },
+            status: "Y",
+          },
+          select: {
+            id: true,
+            name: true,
+            phone_no: true,
+            address: true,
+            timing: true,
+            email: true,
+            rating: true,
+            photo: true,
+            about: true,
+            services: true,
+            features: true,
+            pincode: true,
           },
         });
       }
@@ -1310,12 +1342,26 @@ const nearestlab = async (request, response) => {
           rating: {
             gt: "4",
           },
+          status: "Y",
         },
-
         orderBy: {
           name: "asc",
         },
         take: 3,
+        select: {
+          id: true,
+          name: true,
+          phone_no: true,
+          address: true,
+          timing: true,
+          email: true,
+          rating: true,
+          photo: true,
+          about: true,
+          services: true,
+          features: true,
+          pincode: true,
+        },
       });
       if (findlabs.length > 3) {
         return response.status(200).json({
@@ -1326,10 +1372,27 @@ const nearestlab = async (request, response) => {
         });
       } else {
         let findlabs = await prisma.lab_details.findMany({
+          where: {
+            status: "Y",
+          },
           orderBy: {
             name: "asc",
           },
           take: 3,
+          select: {
+            id: true,
+            name: true,
+            phone_no: true,
+            address: true,
+            timing: true,
+            email: true,
+            rating: true,
+            photo: true,
+            about: true,
+            services: true,
+            features: true,
+            pincode: true,
+          },
         });
         return response.status(200).json({
           error: false,
