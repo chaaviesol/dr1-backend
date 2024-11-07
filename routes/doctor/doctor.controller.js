@@ -375,8 +375,6 @@ const get_doctors = async (req, res) => {
     logger.error(`Internal server error: ${error.message} in get_doctors API`);
 
     res.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    await prisma.$disconnect();
   }
 };
 

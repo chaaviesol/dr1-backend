@@ -708,7 +708,7 @@ const getusers = async (request, response) => {
 };
 
 const getprofile = async (request, response) => {
-  console.log("getprofileeeee");
+  console.log("getprofileeeee=====");
   const secretKey = process.env.ENCRYPTION_KEY;
 
   const safeDecrypt = (text, key) => {
@@ -757,7 +757,7 @@ const getprofile = async (request, response) => {
     userDetails.email = decryptedemail;
     userDetails.ageGroup = decryptedageGroup;
     userDetails.gender = decryptgender;
-
+console.log({userDetails})
     return response.status(200).json({
       error: false,
       success: true,

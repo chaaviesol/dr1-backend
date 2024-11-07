@@ -20,6 +20,7 @@ const {
   getunapprovelab,
   approvelab,
   completeedit,
+  nearestlab
 } = require("./lab.controller");
 const { upload } = require("../../middleware/Uploadimage");
 const LabRouter = express.Router();
@@ -45,5 +46,6 @@ LabRouter.post("/labdisable", auth,lab_disable);
 LabRouter.get("/getunapprovelab", auth,getunapprovelab);
 LabRouter.post("/approvelab",auth, approvelab);
 LabRouter.post("/editbyadmin",auth, completeedit);
+LabRouter.post("/nearestlab", nearestlab);
 
 module.exports = LabRouter;

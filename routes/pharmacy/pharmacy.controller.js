@@ -346,7 +346,6 @@ const addToCart = async (request, response) => {
   const user_id = request.user.userId;
   const datetime = getCurrentDateInIST();
   try {
-    // Validate request body
     if (!user_id || !prod_id || !quantity) {
       logger.error(
         "user_id, prod_id, or quantity is undefined in addToCart API"
@@ -365,10 +364,11 @@ const addToCart = async (request, response) => {
     });
 
     if (existingCartItem) {
-      // const addquantity = existingCartItem?.quantity + parseInt(quantity);
       const addexistingitem = await prisma.customer_cart.update({
         where: {
           id: existingCartItem?.id,
+          user_id: user_id,
+          prod_id: prod_id,
         },
         data: {
           quantity: parseInt(quantity),
@@ -397,7 +397,9 @@ const addToCart = async (request, response) => {
       });
     }
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in addToCart API`);
+    logger.error(
+      `Internal server error: ${error.message} in pharmacy--> addToCart API`
+    );
     response.status(500).json({
       error: true,
       message: "Internal server error",
@@ -1174,7 +1176,6 @@ const prescriptioninvoice = async (request, response) => {
         });
       }
     });
-
 
     response.status(200).json({
       message: "Successfully created",

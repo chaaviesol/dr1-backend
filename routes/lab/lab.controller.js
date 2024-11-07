@@ -884,7 +884,8 @@ const getalabfeedback = async (req, res) => {
       (sum, feedback) => sum + feedback.rating,
       0
     );
-    const averageRating = datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
+    const averageRating =
+      datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
     const updaterating = await prisma.lab_details.update({
       where: {
         id: lab_id,
@@ -1258,6 +1259,100 @@ const completeedit = async (req, res) => {
   }
 };
 
+const nearestlab = async (request, response) => {
+  try {
+    const { pincode } = request.body;
+    if (pincode) {
+      const pincodeInt = parseInt(pincode, 10);
+
+      let findlabs = await prisma.lab_details.findMany({
+        where: { pincode: String(pincodeInt) },
+        orderBy: "asc",
+      });
+
+      if (findlabs.length >= 3) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully retrieved nearest labs",
+          data: findlabs,
+        });
+      } else {
+        const pincodeRange = [];
+        for (let i = -4; i <= 4; i++) {
+          pincodeRange.push(String(pincodeInt + i));
+        }
+
+        findlabs = await prisma.lab_details.findMany({
+          where: {
+            pincode: { in: pincodeRange },
+          },
+        });
+      }
+
+      if (findlabs.length > 0) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully retrieved nearest labs",
+          data: findlabs,
+        });
+      } else {
+        return response.status(404).json({
+          error: true,
+          success: false,
+          message: "No labs found in the specified range",
+        });
+      }
+    } else {
+      let findlabs = await prisma.lab_details.findMany({
+        where: {
+          rating: {
+            gt: "4",
+          },
+        },
+
+        orderBy: {
+          name: "asc",
+        },
+        take: 3,
+      });
+      if (findlabs.length > 3) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Success",
+          data: findlabs,
+        });
+      } else {
+        let findlabs = await prisma.lab_details.findMany({
+          orderBy: {
+            name: "asc",
+          },
+          take: 3,
+        });
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Success",
+          data: findlabs,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in lab nearestlab API`
+    );
+
+    return response.status(500).json({
+      error: true,
+      message: "Internal Server Error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   addlab,
   labLogin,
@@ -1279,4 +1374,5 @@ module.exports = {
   getunapprovelab,
   approvelab,
   completeedit,
+  nearestlab,
 };
