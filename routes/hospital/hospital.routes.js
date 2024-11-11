@@ -28,7 +28,8 @@ const {
   getunapprovehsptl,
   approvehospital,
   completeedit,
-  hospital_doctors
+  hospital_doctors,
+  nearesthospital
 } = require("./hospital.controller");
 const { upload } = require("../../middleware/Uploadimage");
 const HospitalRouter = express.Router();
@@ -66,5 +67,6 @@ HospitalRouter.post("/hospitaldisable",auth, hospital_disable);
 HospitalRouter.get("/getunapprovehsptl",auth, getunapprovehsptl);
 HospitalRouter.post("/approvehospital",auth, approvehospital);
 HospitalRouter.post('/hospital_doctors',hospital_doctors)
+HospitalRouter.post("/nearesthospital",nearesthospital)
 
 module.exports = HospitalRouter;

@@ -1296,9 +1296,8 @@ const getDoctorList = async (req, res) => {
           phone_no: true,
           email: true,
           image: true,
-          type:true,
-          specialization:true,
-         
+          type: true,
+          specialization: true,
         },
       });
       doctorDatas.push(doctorsDetails[0]);
@@ -1645,8 +1644,9 @@ const getahospitalfeedback = async (req, res) => {
       (sum, feedback) => sum + feedback.rating,
       0
     );
-   
-    const averageRating = datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
+
+    const averageRating =
+      datas.length > 0 ? (totalRatings / datas.length).toFixed(1) : 0;
     const updaterating = await prisma.hospital_details.update({
       where: {
         id: hospital_id,
@@ -1891,6 +1891,173 @@ const hospital_doctors = async (request, response) => {
   }
 };
 
+const nearesthospital = async (request, response) => {
+  try {
+    const { pincode } = request.body;
+    if (pincode) {
+      const pincodeInt = parseInt(pincode, 10);
+
+      let findhospitals = await prisma.hospital_details.findMany({
+        where: {
+          pincode: pincodeInt,
+          status: "Y",
+        },
+        orderBy: {
+          name:"asc",
+        },
+        select: {
+          id: true,
+          name: true,
+          contact_no: true,
+          address: true,
+          licence_no: true,
+          type: true,
+          email: true,
+          rating: true,
+          photo: true,
+          about: true,
+          speciality: true,
+          feature: true,
+          focusarea: true,
+          pincode: true,
+        },
+      });
+
+      if (findhospitals.length >= 3) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully retrieved nearest labs",
+          data: findhospitals,
+        });
+      } else {
+        const pincodeRange = [];
+        for (let i = -4; i <= 4; i++) {
+          pincodeRange.push(pincodeInt + i);
+        }
+
+        findhospitals = await prisma.hospital_details.findMany({
+          where: {
+            pincode: { in: pincodeRange },
+            status: "Y",
+          },
+          select: {
+            id: true,
+            name: true,
+            contact_no: true,
+            address: true,
+            licence_no: true,
+            type: true,
+            email: true,
+            rating: true,
+            photo: true,
+            about: true,
+            speciality: true,
+            feature: true,
+            focusarea: true,
+            pincode: true,
+          },
+        });
+      }
+
+      if (findhospitals.length > 0) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully retrieved nearest labs",
+          data: findhospitals,
+        });
+      } else {
+        return response.status(404).json({
+          error: true,
+          success: false,
+          message: "No labs found in the specified range",
+        });
+      }
+    } else {
+      let findhospitals = await prisma.hospital_details.findMany({
+        where: {
+          rating: {
+            gt: "4",
+          },
+          status: "Y",
+        },
+        orderBy: {
+          name: "asc",
+        },
+        take: 3,
+        select: {
+          id: true,
+          name: true,
+          contact_no: true,
+          address: true,
+          licence_no: true,
+          type: true,
+          email: true,
+          rating: true,
+          photo: true,
+          about: true,
+          speciality: true,
+          feature: true,
+          focusarea: true,
+          pincode: true,
+        },
+      });
+      if (findhospitals.length > 3) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Success",
+          data: findhospitals,
+        });
+      } else {
+        let findhospitals = await prisma.hospital_details.findMany({
+          where: {
+            status: "Y",
+          },
+          orderBy: {
+            name: "asc",
+          },
+          take: 3,
+          select: {
+            id: true,
+            name: true,
+            contact_no: true,
+            address: true,
+            licence_no: true,
+            type: true,
+            email: true,
+            rating: true,
+            photo: true,
+            about: true,
+            speciality: true,
+            feature: true,
+            focusarea: true,
+            pincode: true,
+          },
+        });
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Success",
+          data: findhospitals,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in lab nearestlab API`
+    );
+
+    return response.status(500).json({
+      error: true,
+      message: "Internal Server Error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   hospital_registration,
   hospital_login,
@@ -1921,4 +2088,5 @@ module.exports = {
   approvehospital,
   completeedit,
   hospital_doctors,
+  nearesthospital
 };

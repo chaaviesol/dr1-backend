@@ -1270,7 +1270,9 @@ const nearestlab = async (request, response) => {
           pincode: String(pincodeInt),
           status: "Y",
         },
-        orderBy: "asc",
+        orderBy: {
+          name:"asc",
+        },
         select: {
           id: true,
           name: true,
