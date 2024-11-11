@@ -888,7 +888,7 @@ const get_pincode = async (req, res) => {
             doctor_hospitalId: {
               some: {
                 hospitalid: {
-                  pincode: pincode, // Match on the pincode field of hospital_details
+                  pincode: pincode, // Match on the pincode field of doctor_details
                 },
               },
             },
@@ -1762,6 +1762,185 @@ const addhospital = async (req, res) => {
   }
 };
 
+const nearestdoctor = async (request, response) => {
+  try {
+    const { pincode } = request.body;
+    if (pincode) {
+      const pincodeInt = parseInt(pincode, 10);
+
+      let finddoctors = await prisma.doctor_details.findMany({
+        where: {
+          pincode: pincodeInt,
+          status: "Y",
+        },
+        orderBy: {
+          name:"asc",
+        },
+        select: {
+          id: true,
+          name: true,
+          second_name:true,
+          phone_office: true,
+          address: true,
+          additional_speciality: true,
+          type: true,
+          email: true,
+          rating: true,
+          image: true,
+          about: true,
+          specialization: true,
+          additional_qualification: true,
+          education_qualification: true,
+          gender:true,
+          sector:true,
+          pincode: true,
+        },
+      });
+
+      if (finddoctors.length >= 3) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully retrieved nearest labs",
+          data: finddoctors,
+        });
+      } else {
+        const pincodeRange = [];
+        for (let i = -4; i <= 4; i++) {
+          pincodeRange.push(pincodeInt + i);
+        }
+
+        finddoctors = await prisma.doctor_details.findMany({
+          where: {
+            pincode: { in: pincodeRange },
+            status: "Y",
+          },
+          select: {
+            id: true,
+            name: true,
+            second_name:true,
+            phone_office: true,
+            address: true,
+            additional_speciality: true,
+            type: true,
+            email: true,
+            rating: true,
+            image: true,
+            about: true,
+            specialization: true,
+            additional_qualification: true,
+            education_qualification: true,
+            gender:true,
+            sector:true,
+            pincode: true,
+          },
+        });
+      }
+
+      if (finddoctors.length > 0) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Successfully retrieved nearest labs",
+          data: finddoctors,
+        });
+      } else {
+        return response.status(404).json({
+          error: true,
+          success: false,
+          message: "No labs found in the specified range",
+        });
+      }
+    } else {
+      let finddoctors = await prisma.doctor_details.findMany({
+        where: {
+          rating: {
+            gt: "4",
+          },
+          status: "Y",
+        },
+        orderBy: {
+          name: "asc",
+        },
+        take: 3,
+        select: {
+          id: true,
+          name: true,
+          second_name:true,
+          phone_office: true,
+          address: true,
+          additional_speciality: true,
+          type: true,
+          email: true,
+          rating: true,
+          image: true,
+          about: true,
+          specialization: true,
+          additional_qualification: true,
+          education_qualification: true,
+          gender:true,
+          sector:true,
+          pincode: true,
+        },
+      });
+      if (finddoctors.length > 3) {
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Success",
+          data: finddoctors,
+        });
+      } else {
+        let finddoctors = await prisma.doctor_details.findMany({
+          where: {
+            status: "Y",
+          },
+          orderBy: {
+            name: "asc",
+          },
+          take: 3,
+          select: {
+            id: true,
+            name: true,
+            second_name:true,
+            phone_office: true,
+            address: true,
+            additional_speciality: true,
+            type: true,
+            email: true,
+            rating: true,
+            image: true,
+            about: true,
+            specialization: true,
+            additional_qualification: true,
+            education_qualification: true,
+            gender:true,
+            sector:true,
+            pincode: true,
+          },
+        });
+        return response.status(200).json({
+          error: false,
+          success: true,
+          message: "Success",
+          data: finddoctors,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in doctor nearestlab API`
+    );
+
+    return response.status(500).json({
+      error: true,
+      message: "Internal Server Error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   doctor_registration,
   doctor_login,
@@ -1788,4 +1967,5 @@ module.exports = {
   approvedr,
   completeedit,
   addhospital,
+  nearestdoctor
 };

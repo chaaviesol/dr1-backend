@@ -25,7 +25,8 @@ const {
   getunapprovedrs,
   approvedr,
   completeedit,
-  addhospital
+  addhospital,
+  nearestdoctor,
 } = require("./doctor.controller");
 const auth = require("../../middleware/Auth/auth");
 const { upload } = require("../../middleware/Uploadimage");
@@ -63,6 +64,6 @@ DoctorRouter.get("/getunapprovedrs", getunapprovedrs);
 DoctorRouter.post("/approvedr", approvedr);
 DoctorRouter.post("/completeedit", completeedit);
 
-DoctorRouter.post("/addhospital",auth,addhospital)
-
+DoctorRouter.post("/addhospital", auth, addhospital);
+DoctorRouter.post("/nearestdoctor", nearestdoctor);
 module.exports = DoctorRouter;

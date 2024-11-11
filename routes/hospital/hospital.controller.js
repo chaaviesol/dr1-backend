@@ -1903,14 +1903,13 @@ const nearesthospital = async (request, response) => {
           status: "Y",
         },
         orderBy: {
-          name:"asc",
+          name: "asc",
         },
         select: {
           id: true,
           name: true,
           contact_no: true,
           address: true,
-          licence_no: true,
           type: true,
           email: true,
           rating: true,
@@ -1946,7 +1945,6 @@ const nearesthospital = async (request, response) => {
             name: true,
             contact_no: true,
             address: true,
-            licence_no: true,
             type: true,
             email: true,
             rating: true,
@@ -1991,7 +1989,6 @@ const nearesthospital = async (request, response) => {
           name: true,
           contact_no: true,
           address: true,
-          licence_no: true,
           type: true,
           email: true,
           rating: true,
@@ -2024,7 +2021,6 @@ const nearesthospital = async (request, response) => {
             name: true,
             contact_no: true,
             address: true,
-            licence_no: true,
             type: true,
             email: true,
             rating: true,
@@ -2046,7 +2042,7 @@ const nearesthospital = async (request, response) => {
     }
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in lab nearestlab API`
+      `Internal server error: ${error.message} in hospital nearestlab API`
     );
 
     return response.status(500).json({
@@ -2088,5 +2084,5 @@ module.exports = {
   approvehospital,
   completeedit,
   hospital_doctors,
-  nearesthospital
+  nearesthospital,
 };
