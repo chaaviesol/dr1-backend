@@ -1,10 +1,12 @@
 const express = require("express");
-const { getCurrentLocation } = require("./googlemap.controller");
-
+const {
+  getCurrentLocation,
+  searchLocation,
+} = require("./googlemap.controller");
 
 const googleMapRouter = express.Router();
 
+googleMapRouter.post("/getcurrentlocation", getCurrentLocation);
+googleMapRouter.post("/searchlocation", searchLocation);
 
-googleMapRouter.post("/getcurrentlocation",getCurrentLocation)
-
-module.exports=googleMapRouter
+module.exports = googleMapRouter;

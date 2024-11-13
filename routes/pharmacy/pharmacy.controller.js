@@ -722,7 +722,6 @@ const getasalesorder = async (request, response) => {
               select: {
                 name: true,
                 category: true,
-                subcategory: true,
                 mrp: true,
                 description: true,
               },

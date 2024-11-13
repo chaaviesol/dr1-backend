@@ -1,5 +1,7 @@
 const axios = require("axios");
 const { logger } = require("../../utils");
+const PLACES_API_URL =
+  "https://maps.googleapis.com/maps/api/place/textsearch/json";
 require("dotenv").config();
 
 const getCurrentLocation = async (req, res) => {
@@ -19,7 +21,13 @@ const getCurrentLocation = async (req, res) => {
       const addressComponents = response.data.results[0].address_components;
       // console.log({addressComponents})
       const formattedAddress = response.data.results[0].formatted_address;
-      let country, state, city, streetAddress,sublocalityLevel_1,sublocalityLevel_2, postalCode;
+      let country,
+        state,
+        city,
+        streetAddress,
+        sublocalityLevel_1,
+        sublocalityLevel_2,
+        postalCode;
 
       for (let component of addressComponents) {
         if (component.types.includes("country")) {
@@ -67,6 +75,35 @@ const getCurrentLocation = async (req, res) => {
   }
 };
 
+const searchLocation = async (req, res) => {
+  const { query } = req.body;
+  if (!query) {
+    return res.status(400).json({
+      error: true,
+      message: "search query  required",
+    });
+  }
+
+  try {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const AUTOCOMPLETE_API_URL =
+      "https://maps.googleapis.com/maps/api/place/autocomplete/json";
+    const response = await axios.get(AUTOCOMPLETE_API_URL, {
+      params: {
+        input: query,
+        key: apiKey,
+      },
+    });
+    res.status(200).json({
+      data: response.data.predictions,
+    });
+  } catch (error) {
+    logger.error("Error fetching autocomplete suggestions:", error);
+    res.status(500).json({ error: "Failed to fetch suggestions" });
+  }
+};
+
 module.exports = {
   getCurrentLocation,
+  searchLocation,
 };
