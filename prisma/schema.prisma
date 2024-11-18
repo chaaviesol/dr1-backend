@@ -425,7 +425,9 @@ model sales_order {
   so_status              String? 
   order_type             String?               
   remarks                String? 
-  delivery_address       String?                
+  delivery_address       String?
+  district               String?
+  city                   String?                
   delivery_date          DateTime?                              
   created_date           DateTime?              
   updated_by             Int?                 
