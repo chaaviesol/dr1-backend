@@ -521,6 +521,8 @@ const salesorder = async (request, response) => {
     order_type,
     products,
     delivery_address,
+    city,
+    district,
     pincode,
     contact_no,
   } = request.body;
@@ -595,6 +597,8 @@ const salesorder = async (request, response) => {
           updated_date: datetime,
           customer_id: userId,
           delivery_address: delivery_address,
+          city,
+          district,
           contact_no: contact_no,
           pincode: parseInt(pincode),
         },
@@ -709,6 +713,8 @@ const getasalesorder = async (request, response) => {
         contact_no: true,
         created_date: true,
         delivery_address: true,
+        city:true,
+        district:true,
         pincode: true,
         prescription_image: true,
         patient_name: true,
@@ -765,6 +771,8 @@ const presciptionsaleorders = async (request, response) => {
         pincode: true,
         so_number: true,
         delivery_address: true,
+        city:true,
+        district:true,
         order_type: true,
         remarks: true,
         users: {
@@ -839,6 +847,8 @@ const allsalelistorders = async (request, response) => {
         pincode: true,
         so_number: true,
         delivery_address: true,
+        city:true,
+        district:true,
         order_type: true,
         remarks: true,
         users: {
@@ -925,6 +935,8 @@ const checkaddress = async (request, response) => {
         },
         select: {
           delivery_address: true,
+          city:true,
+          district:true,
         },
       });
       console.log({ check });
@@ -1250,6 +1262,8 @@ const myorders = async (request, response) => {
         so_status: true,
         order_type: true,
         delivery_address: true,
+        city:true,
+        district:true,
         created_date: true,
         contact_no: true,
         updated_date: true,
