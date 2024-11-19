@@ -190,7 +190,7 @@ const filterpharmacy = async (request, response) => {
 const productadd = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
-    const { id, name, description, category, created_by, mrp, brand, images } =
+    const { id, name, description, category, created_by, mrp, brand, images,hsn } =
       JSON.parse(request.body.data);
     if (!name || !description || !mrp || !brand) {
       return response.status(400).json({ error: "All fields are required" });
@@ -236,6 +236,7 @@ const productadd = async (request, response) => {
           brand,
           created_date: datetime,
           is_active: "Y",
+          hsn:hsn
         },
       });
       if (create) {
@@ -265,6 +266,7 @@ const productadd = async (request, response) => {
           brand,
           created_date: datetime,
           is_active: "Y",
+          hsn:hsn
         },
       });
       if (create) {
@@ -1038,6 +1040,7 @@ const medicineadd = async (request, response) => {
 ////////////////////invoice/////////////////
 //////for normal type salesorder////////////////////////
 const createinvoice = async (request, response) => {
+  console.log("cretttttt", request.body);
   try {
     const datetime = getCurrentDateInIST();
     const { sales_id, sold_by, medication_details, userId, doctor_name } =
@@ -1075,6 +1078,14 @@ const createinvoice = async (request, response) => {
             batch_no,
             selling_price,
           } = medicinedet;
+          const checkmed = await prisma.generic_product.findFirst({
+            where: {
+              id:medicine[0].id
+            },
+            select:{
+              category:true
+            }
+          });
 
           await prisma.medicine_timetable.create({
             data: {
@@ -1089,10 +1100,10 @@ const createinvoice = async (request, response) => {
             },
           });
 
-          await prisma.sales_list.update({
+          await prisma.sales_list.updateMany({
             where: {
               sales_id: sales_id,
-              product_id: medicine?.product_id,
+              product_id: medicine[0].id,
             },
             data: {
               batch_no: batch_no,
@@ -1122,8 +1133,14 @@ const createinvoice = async (request, response) => {
 const prescriptioninvoice = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
-    const { sales_id, sold_by, medication_details, total_amount, userId ,doctor_name} =
-      request.body;
+    const {
+      sales_id,
+      sold_by,
+      medication_details,
+      total_amount,
+      userId,
+      doctor_name,
+    } = request.body;
 
     if (!sales_id || !medication_details || !userId) {
       return response.status(400).json({ error: "All fields are required" });

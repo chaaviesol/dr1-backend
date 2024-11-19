@@ -406,8 +406,8 @@ model customer_cart {
 
 model sales_list {
   id              Int               @id @default(autoincrement())
-  sales_id        Int?
-  product_id      Int?
+  sales_id        Int
+  product_id      Int
   order_qty       Int?
   net_amount      Int?
   selling_price   Int?
