@@ -713,8 +713,8 @@ const getasalesorder = async (request, response) => {
         contact_no: true,
         created_date: true,
         delivery_address: true,
-        city:true,
-        district:true,
+        city: true,
+        district: true,
         pincode: true,
         prescription_image: true,
         patient_name: true,
@@ -771,8 +771,8 @@ const presciptionsaleorders = async (request, response) => {
         pincode: true,
         so_number: true,
         delivery_address: true,
-        city:true,
-        district:true,
+        city: true,
+        district: true,
         order_type: true,
         remarks: true,
         users: {
@@ -847,8 +847,8 @@ const allsalelistorders = async (request, response) => {
         pincode: true,
         so_number: true,
         delivery_address: true,
-        city:true,
-        district:true,
+        city: true,
+        district: true,
         order_type: true,
         remarks: true,
         users: {
@@ -935,8 +935,8 @@ const checkaddress = async (request, response) => {
         },
         select: {
           delivery_address: true,
-          city:true,
-          district:true,
+          city: true,
+          district: true,
         },
       });
       console.log({ check });
@@ -1040,13 +1040,22 @@ const medicineadd = async (request, response) => {
 const createinvoice = async (request, response) => {
   try {
     const datetime = getCurrentDateInIST();
-    const { sales_id, sold_by, medication_details, userId } = request.body;
+    const { sales_id, sold_by, medication_details, userId, doctor_name } =
+      request.body;
 
     if (!sales_id || !medication_details || !sold_by) {
       return response.status(400).json({ error: "All fields are required" });
     }
 
     await prisma.$transaction(async (prisma) => {
+      const updatesales = await prisma.sales_order.update({
+        where: {
+          sales_id,
+        },
+        data: {
+          doctor_name,
+        },
+      });
       const create = await prisma.sales_invoice.create({
         data: {
           sales_id,
@@ -1113,7 +1122,7 @@ const createinvoice = async (request, response) => {
 const prescriptioninvoice = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
-    const { sales_id, sold_by, medication_details, total_amount, userId } =
+    const { sales_id, sold_by, medication_details, total_amount, userId ,doctor_name} =
       request.body;
 
     if (!sales_id || !medication_details || !userId) {
@@ -1125,6 +1134,14 @@ const prescriptioninvoice = async (request, response) => {
       : null;
 
     await prisma.$transaction(async (prisma) => {
+      const updatesales = await prisma.sales_order.update({
+        where: {
+          sales_id,
+        },
+        data: {
+          doctor_name,
+        },
+      });
       await prisma.sales_invoice.create({
         data: {
           sales_id,
@@ -1262,8 +1279,8 @@ const myorders = async (request, response) => {
         so_status: true,
         order_type: true,
         delivery_address: true,
-        city:true,
-        district:true,
+        city: true,
+        district: true,
         created_date: true,
         contact_no: true,
         updated_date: true,

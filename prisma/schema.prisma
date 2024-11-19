@@ -436,7 +436,8 @@ model sales_order {
   customer_id            Int?   
   pincode                Int?
   prescription_image     Json?   
-  patient_name           String?         
+  patient_name           String?
+  doctor_name            String?         
   sales_list             sales_list[]
   sales_invoice          sales_invoice[]
   users                  user_details? @relation(fields: [customer_id],references: [id])
