@@ -190,8 +190,17 @@ const filterpharmacy = async (request, response) => {
 const productadd = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
-    const { id, name, description, category, created_by, mrp, brand, images,hsn } =
-      JSON.parse(request.body.data);
+    const {
+      id,
+      name,
+      description,
+      category,
+      created_by,
+      mrp,
+      brand,
+      images,
+      hsn,
+    } = JSON.parse(request.body.data);
     if (!name || !description || !mrp || !brand) {
       return response.status(400).json({ error: "All fields are required" });
     }
@@ -236,7 +245,7 @@ const productadd = async (request, response) => {
           brand,
           created_date: datetime,
           is_active: "Y",
-          hsn:hsn
+          hsn: hsn,
         },
       });
       if (create) {
@@ -266,7 +275,7 @@ const productadd = async (request, response) => {
           brand,
           created_date: datetime,
           is_active: "Y",
-          hsn:hsn
+          hsn: hsn,
         },
       });
       if (create) {
@@ -1038,6 +1047,117 @@ const medicineadd = async (request, response) => {
 };
 
 ////////////////////invoice/////////////////
+
+const getinvsalesorder = async (request, response) => {
+  const secretKey = process.env.ENCRYPTION_KEY;
+  try {
+    const sales_id = request.body.sales_id;
+    if (!sales_id) {
+      return response.status(400).json({
+        message: "sales_id can't be null",
+        error: true,
+      });
+    }
+    const getdata = await prisma.sales_order.findUnique({
+      where: {
+        sales_id: sales_id,
+      },
+      select: {
+        sales_id: true,
+        so_number: true,
+        so_status: true,
+        order_type: true,
+        remarks: true,
+        users: {
+          select: {
+            name: true,
+          },
+        },
+        contact_no: true,
+        created_date: true,
+        delivery_address: true,
+        doctor_name: true,
+        city: true,
+        district: true,
+        pincode: true,
+        prescription_image: true,
+        patient_name: true,
+        sales_list: {
+          select: {
+            id: true,
+            order_qty: true,
+            net_amount: true,
+            pharmacy_name: true,
+            generic_prodid: {
+              select: {
+                name: true,
+                category: true,
+                mrp: true,
+                description: true,
+                hsn: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const decryptedUsername = decrypt(getdata?.users.name, secretKey);
+    const medication_details = (getdata.sales_list || getdata).map((item) => ({
+      id: item?.id || "",
+      name: item?.generic_prodid?.name || "",
+      category: item?.generic_prodid?.category || "",
+      batch_no: "",
+      timing: "",
+      afterFd_beforeFd: "",
+      takingQuantity: "",
+      totalQuantity: item?.order_qty || "",
+      hsn: item?.generic_prodid?.hsn || "",
+      mrp: item?.generic_prodid?.mrp || "",
+      selling_price: item?.net_amount || "",
+    }));
+    if (medication_details.length === 0) {
+      medication_details.push({
+        id: "",
+        name: "",
+        category: "",
+        batch_no: "",
+        timing: "",
+        afterFd_beforeFd: "",
+        takingQuantity: "",
+        totalQuantity: "",
+        hsn: "",
+        mrp: "",
+        selling_price: "",
+      });
+    }
+    const responseData = {
+      sales_id: getdata.sales_id,
+      contact_no: getdata.contact_no,
+      doctor_name: getdata.doctor_name,
+      username: decryptedUsername,
+      delivery_address: getdata.delivery_address,
+      district: getdata.district,
+      city: getdata.city,
+      medicine_details: medication_details,
+      total: "",
+    };
+    response.status(200).json({
+      success: true,
+      data: responseData,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in getinvsalesorder API`
+    );
+    response.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 //////for normal type salesorder////////////////////////
 const createinvoice = async (request, response) => {
   console.log("cretttttt", request.body);
@@ -1080,11 +1200,11 @@ const createinvoice = async (request, response) => {
           } = medicinedet;
           const checkmed = await prisma.generic_product.findFirst({
             where: {
-              id:medicine[0].id
+              id: medicine[0].id,
             },
-            select:{
-              category:true
-            }
+            select: {
+              category: true,
+            },
           });
 
           await prisma.medicine_timetable.create({
@@ -1428,4 +1548,5 @@ module.exports = {
   getainvoice,
   prescriptioninvoice,
   myorders,
+  getinvsalesorder,
 };
