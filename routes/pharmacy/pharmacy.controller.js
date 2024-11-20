@@ -1159,6 +1159,88 @@ const getinvsalesorder = async (request, response) => {
   }
 };
 //////for normal type salesorder////////////////////////
+// const createinvoice = async (request, response) => {
+//   console.log("cretttttt", request.body);
+//   try {
+//     const datetime = getCurrentDateInIST();
+//     const { sales_id, sold_by, medication_details, userId, doctor_name } =
+//       request.body;
+
+//     if (!sales_id || !medication_details || !sold_by) {
+//       return response.status(400).json({ error: "All fields are required" });
+//     }
+
+//     await prisma.$transaction(async (prisma) => {
+//       const updatesales = await prisma.sales_order.update({
+//         where: {
+//           sales_id,
+//         },
+//         data: {
+//           doctor_name,
+//         },
+//       });
+//       const create = await prisma.sales_invoice.create({
+//         data: {
+//           sales_id,
+//           sold_by,
+//           created_date: datetime,
+//         },
+//       });
+
+//       if (create) {
+//         for (const medicinedet of medication_details) {
+//           const {
+//             medicine,
+//             afterFd_beforeFd,
+//             totalQuantity,
+//             timing,
+//             takingQuantity,
+//             batch_no,
+//             selling_price,
+//           } = medicinedet;
+// if (category.some((item) => item.toLowerCase() === "medicines")) {
+//   const medicine = [{ "id": id, "name": name }];
+//   await prisma.medicine_timetable.create({
+//     data: {
+//       userId: userId,
+//       medicine: medicine,
+//       afterFd_beforeFd,
+//       totalQuantity,
+//       timing,
+//       takingQuantity,
+//       app_flag: false,
+//       created_date: datetime,
+//     },
+//   });
+// }
+//           await prisma.sales_list.updateMany({
+//             where: {
+//               sales_id: sales_id,
+//               product_id: medicine[0].id,
+//             },
+//             data: {
+//               batch_no: batch_no,
+//               selling_price: selling_price,
+//             },
+//           });
+//         }
+//       }
+//     });
+
+//     return response.status(200).json({
+//       message: "Successfully created",
+//       success: true,
+//     });
+//   } catch (error) {
+//     logger.error(
+//       `Internal server error: ${error.message} in createinvoice API`
+//     );
+//     response.status(500).json("An error occurred");
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const createinvoice = async (request, response) => {
   console.log("cretttttt", request.body);
   try {
@@ -1190,35 +1272,56 @@ const createinvoice = async (request, response) => {
       if (create) {
         for (const medicinedet of medication_details) {
           const {
-            medicine,
+            id,
+            name,
             afterFd_beforeFd,
             totalQuantity,
             timing,
             takingQuantity,
             batch_no,
             selling_price,
+            category,
           } = medicinedet;
-          const checkmed = await prisma.generic_product.findFirst({
-            where: {
-              id: medicine[0].id,
-            },
-            select: {
-              category: true,
-            },
-          });
 
-          await prisma.medicine_timetable.create({
-            data: {
-              userId: userId,
-              medicine: medicine,
-              afterFd_beforeFd,
-              totalQuantity,
-              timing,
-              takingQuantity,
-              app_flag: false,
-              created_date: datetime,
-            },
-          });
+          // Check if the category array includes "MEDICINES"
+          if (category.some((item) => item.toLowerCase() === "medicines")) {
+            const medicine = [{ id: id, name: name }];
+            console.log({medicine})
+            let newtiming = [];
+
+            if (Array.isArray(timing)) {
+              const timeMapping = {
+                morning: "time1",
+                lunch: "time2",
+                dinner: "time3"
+              };
+            
+              const timingObject = timing.reduce((acc, time) => {
+                const key = timeMapping[time.toLowerCase()]; 
+                if (key) {
+                  acc[key] = time; 
+                }
+                return acc;
+              }, {});
+            
+              if (Object.keys(timingObject).length > 0) {
+                newtiming.push(timingObject); 
+              }
+            }
+                        
+            await prisma.medicine_timetable.create({
+              data: {
+                userId: userId,
+                medicine: medicine,
+                afterFd_beforeFd,
+                totalQuantity,
+                timing:newtiming,
+                takingQuantity,
+                app_flag: false,
+                created_date: datetime,
+              },
+            });
+          }
 
           await prisma.sales_list.updateMany({
             where: {
@@ -1298,7 +1401,8 @@ const prescriptioninvoice = async (request, response) => {
 
       for (const medicinedet of medication_details) {
         const {
-          medicine,
+          id,
+          name,
           afterFd_beforeFd,
           totalQuantity,
           timing,
@@ -1307,20 +1411,48 @@ const prescriptioninvoice = async (request, response) => {
           selling_price,
           quantity,
           mrp,
+          category
         } = medicinedet;
+        if (category.some((item) => item.toLowerCase() === "medicines")) {
+          const medicine = [{ id: id, name: name }];
+          console.log({medicine})
+          let newtiming = [];
 
-        await prisma.medicine_timetable.create({
-          data: {
-            userId: userId,
-            medicine: medicine,
-            afterFd_beforeFd,
-            totalQuantity,
-            timing,
-            takingQuantity,
-            app_flag: false,
-            created_date: datetime,
-          },
-        });
+          if (Array.isArray(timing)) {
+            const timeMapping = {
+              morning: "time1",
+              lunch: "time2",
+              dinner: "time3"
+            };
+          
+            const timingObject = timing.reduce((acc, time) => {
+              const key = timeMapping[time.toLowerCase()]; 
+              if (key) {
+                acc[key] = time; 
+              }
+              return acc;
+            }, {});
+          
+            if (Object.keys(timingObject).length > 0) {
+              newtiming.push(timingObject); 
+            }
+          }
+                      
+          await prisma.medicine_timetable.create({
+            data: {
+              userId: userId,
+              medicine: medicine,
+              afterFd_beforeFd,
+              totalQuantity,
+              timing:newtiming,
+              takingQuantity,
+              app_flag: false,
+              created_date: datetime,
+            },
+          });
+        }
+
+       
 
         const net_amount = Number(quantity) * Number(mrp);
 

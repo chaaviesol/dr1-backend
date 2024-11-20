@@ -194,10 +194,11 @@ Specialties of Others:${otherSpecs}
       delete conversationHistories[userId];
     }
   } catch (error) {
-    console.error(
-      `Internal server error: ${error.message} in updatednewchat API`
+    logger.error(
+      `Internal server error: ${error.message} in chatbot-updatednewchat API`
     );
-    response.status(500).json("An error occurred");
+    console.error(error);
+    response.status(500).json({ error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();
   }

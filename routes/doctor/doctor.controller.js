@@ -1727,22 +1727,23 @@ const addhospital = async (req, res) => {
 
     const type = findtype?.type;
     const hospitalspeciality = ["General medicine", findtype?.specialization];
-    console.log({ hospitalspeciality });
     const hospitalfeature = ["Op", "Other Services "];
-    // const register_data = await prisma.hospital_details.create({
-    //   data: {
-    //     name: name,
-    //     address: address,
-    //     contact_no: contact_no,
-    //     datetime: datetime,
-    //     email: emaillower,
-    //     speciality: hospitalspeciality,
-    //     feature: hospitalfeature,
-    //     type: type,
-    //     pincode: parseInt(pincode),
-    //     status: "tobeonboarded",
-    //   },
-    // });
+    // const emaillower=
+    // const photo
+    const register_data = await prisma.hospital_details.create({
+      data: {
+        name: name,
+        address: address,
+        contact_no: contact_no,
+        datetime: datetime,
+        // email: emaillower,
+        speciality: hospitalspeciality,
+        feature: hospitalfeature,
+        type: type,
+        pincode: parseInt(pincode),
+        status: "Y",
+      },
+    });
 
     res.status(200).json({
       error: false,
