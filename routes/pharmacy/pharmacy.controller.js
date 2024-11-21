@@ -1245,9 +1245,8 @@ const createinvoice = async (request, response) => {
   console.log("cretttttt", request.body);
   try {
     const datetime = getCurrentDateInIST();
-    const { sales_id, sold_by, medication_details, userId, doctor_name } =
-      request.body;
-
+    const { sales_id, sold_by, userId, doctor_name } = request.body;
+    const medication_details = request.body.medicine_details;
     if (!sales_id || !medication_details || !sold_by) {
       return response.status(400).json({ error: "All fields are required" });
     }
@@ -1284,49 +1283,51 @@ const createinvoice = async (request, response) => {
           } = medicinedet;
 
           // Check if the category array includes "MEDICINES"
+
           if (category.some((item) => item.toLowerCase() === "medicines")) {
+            console.log("insidee");
             const medicine = [{ id: id, name: name }];
-            console.log({medicine})
+            console.log({ medicine });
             let newtiming = [];
 
             if (Array.isArray(timing)) {
               const timeMapping = {
                 morning: "time1",
                 lunch: "time2",
-                dinner: "time3"
+                dinner: "time3",
               };
-            
+
               const timingObject = timing.reduce((acc, time) => {
-                const key = timeMapping[time.toLowerCase()]; 
+                const key = timeMapping[time.toLowerCase()];
                 if (key) {
-                  acc[key] = time; 
+                  acc[key] = time;
                 }
                 return acc;
               }, {});
-            
+
               if (Object.keys(timingObject).length > 0) {
-                newtiming.push(timingObject); 
+                newtiming.push(timingObject);
               }
             }
-                        
+
             await prisma.medicine_timetable.create({
               data: {
                 userId: userId,
                 medicine: medicine,
                 afterFd_beforeFd,
                 totalQuantity,
-                timing:newtiming,
+                timing: newtiming,
                 takingQuantity,
                 app_flag: false,
                 created_date: datetime,
               },
             });
           }
-
+          console.log("opop");
           await prisma.sales_list.updateMany({
             where: {
               sales_id: sales_id,
-              product_id: medicine[0].id,
+              product_id: id,
             },
             data: {
               batch_no: batch_no,
@@ -1342,6 +1343,7 @@ const createinvoice = async (request, response) => {
       success: true,
     });
   } catch (error) {
+    console.log(error);
     logger.error(
       `Internal server error: ${error.message} in createinvoice API`
     );
@@ -1411,48 +1413,46 @@ const prescriptioninvoice = async (request, response) => {
           selling_price,
           quantity,
           mrp,
-          category
+          category,
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
           const medicine = [{ id: id, name: name }];
-          console.log({medicine})
+          console.log({ medicine });
           let newtiming = [];
 
           if (Array.isArray(timing)) {
             const timeMapping = {
               morning: "time1",
               lunch: "time2",
-              dinner: "time3"
+              dinner: "time3",
             };
-          
+
             const timingObject = timing.reduce((acc, time) => {
-              const key = timeMapping[time.toLowerCase()]; 
+              const key = timeMapping[time.toLowerCase()];
               if (key) {
-                acc[key] = time; 
+                acc[key] = time;
               }
               return acc;
             }, {});
-          
+
             if (Object.keys(timingObject).length > 0) {
-              newtiming.push(timingObject); 
+              newtiming.push(timingObject);
             }
           }
-                      
+
           await prisma.medicine_timetable.create({
             data: {
               userId: userId,
               medicine: medicine,
               afterFd_beforeFd,
               totalQuantity,
-              timing:newtiming,
+              timing: newtiming,
               takingQuantity,
               app_flag: false,
               created_date: datetime,
             },
           });
         }
-
-       
 
         const net_amount = Number(quantity) * Number(mrp);
 
