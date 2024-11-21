@@ -1070,6 +1070,7 @@ const getinvsalesorder = async (request, response) => {
         remarks: true,
         users: {
           select: {
+            id:true,
             name: true,
           },
         },
@@ -1103,6 +1104,7 @@ const getinvsalesorder = async (request, response) => {
     });
 
     const decryptedUsername = decrypt(getdata?.users.name, secretKey);
+    const userId=getdata?.users.id
     const medication_details = (getdata.sales_list || getdata).map((item) => ({
       id: item?.id || "",
       name: item?.generic_prodid?.name || "",
@@ -1136,6 +1138,7 @@ const getinvsalesorder = async (request, response) => {
       contact_no: getdata.contact_no,
       doctor_name: getdata.doctor_name,
       username: decryptedUsername,
+      userId:userId,
       delivery_address: getdata.delivery_address,
       district: getdata.district,
       city: getdata.city,
