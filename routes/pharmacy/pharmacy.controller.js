@@ -696,6 +696,181 @@ const salesorder = async (request, response) => {
   }
 };
 
+/////////////new salesorder with prescription and prescription order
+
+// const salesorder = async (request, response) => {
+//   console.log("gffffffffffffff", request.body);
+//   const usertype = request.user.userType;
+//   const {
+//     name, //customername
+//     total_amount,
+//     so_status,
+//     remarks,
+//     order_type,
+//     products,
+//     delivery_address,
+//     city,
+//     district,
+//     pincode,
+//     contact_no,
+//   } = request.body;
+
+//   const userId = parseInt(request.user.userId);
+//   let sales_order;
+
+//   try {
+//     if (!userId) {
+//       logger.error("user_id is undefined in salesorder API");
+//       return response.status(400).json({
+//         error: true,
+//         message: "user_id is required",
+//       });
+//     }
+//     if (usertype != "customer") {
+//       return response.status(400).json({
+//         error: true,
+//         message: "Please login as a customer",
+//       });
+//     }
+//     if (!delivery_address || !contact_no) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "Missing delivery details",
+//       });
+//     }
+
+//     if (!order_type) {
+//       return response.status(400).json({
+//         error: true,
+//         message: "Missing order_type field",
+//       });
+//     }
+
+//     await prisma.$transaction(async (prisma) => {
+//       const currentDate = new Date();
+//       const year = currentDate.getFullYear();
+
+//       const lastTwoDigits = year.toString().slice(-2);
+//       const so_num = "SO";
+//       const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+//       const endOfYear = new Date(new Date().getFullYear() + 1, 0, 1);
+//       const existingsalesOrders = await prisma.sales_order.findMany({
+//         where: {
+//           created_date: {
+//             gte: startOfYear,
+//             lt: endOfYear,
+//           },
+//         },
+//       });
+//       const newid = existingsalesOrders.length + 1;
+//       const formattedNewId = ("0000" + newid).slice(-4);
+//       const so_number = so_num + lastTwoDigits + formattedNewId;
+//       console.log({ so_number });
+//       let total_amount_fixed;
+
+//       if (total_amount) {
+//         total_amount_fixed = parseFloat(total_amount).toFixed(2);
+//       }
+
+//       const datetime = getCurrentDateInIST();
+//       const prescription_image = request?.files;
+//       let imageprescription = {};
+
+//       if (!prescription_image || prescription_image.length === 0) {
+//         return response.status(400).json({
+//           message: "Please attach at least one report",
+//           error: true,
+//         });
+//       }
+
+//       for (i = 0; i < prescription_image?.length; i++) {
+//         let keyName = `image${i + 1}`;
+//         imageprescription[keyName] = prescription_image[i].location;
+//       }
+
+//       sales_order = await prisma.sales_order.create({
+//         data: {
+//           so_number: so_number,
+//           total_amount: total_amount_fixed,
+//           so_status: "Placed",
+//           remarks,
+//           order_type,
+//           created_date: datetime,
+//           updated_date: datetime,
+//           customer_id: userId,
+//           delivery_address: delivery_address,
+//           city,
+//           district,
+//           contact_no: contact_no,
+//           prescription_image: imageprescription,
+//           pincode: parseInt(pincode),
+//         },
+//       });
+
+//       if (order_type != "prescription") {
+//         for (let product of products) {
+//           const net_amount = parseInt(product.quantity) * parseInt(product.mrp);
+
+//           await prisma.sales_list.create({
+//             data: {
+//               sales_order: {
+//                 connect: {
+//                   sales_id: sales_order.sales_id,
+//                 },
+//               },
+//               generic_prodid: {
+//                 connect: {
+//                   id: product.product_id,
+//                 },
+//               },
+//               order_qty: parseInt(product.quantity),
+//               net_amount: net_amount,
+//               created_date: datetime,
+//             },
+//           });
+//         }
+
+//         await prisma.customer_cart.deleteMany({
+//           where: {
+//             user_id: userId,
+//           },
+//         });
+
+//         console.log("successssssssssss");
+//         return response.status(200).json({
+//           success: true,
+//           message: "Successfully placed your order",
+//         });
+//       } else if (order_type === "prescription") {
+//         await prisma.sales_order.update({
+//           where: {
+//             sales_id: sales_order.sales_id,
+//           },
+//           data: {
+//             patient_name: name,
+//             prescription_image: imageprescription,
+//             created_date: datetime,
+//           },
+//         });
+
+//         response.status(200).json({
+//           success: true,
+//           message: "Prescription submitted.",
+//         });
+//       }
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     logger.error(`Internal server error: ${error.message} in salesorder API`);
+//     response.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const getasalesorder = async (request, response) => {
   const secretKey = process.env.ENCRYPTION_KEY;
   try {
@@ -1070,7 +1245,7 @@ const getinvsalesorder = async (request, response) => {
         remarks: true,
         users: {
           select: {
-            id:true,
+            id: true,
             name: true,
           },
         },
@@ -1104,7 +1279,7 @@ const getinvsalesorder = async (request, response) => {
     });
 
     const decryptedUsername = decrypt(getdata?.users.name, secretKey);
-    const userId=getdata?.users.id
+    const userId = getdata?.users.id;
     const medication_details = (getdata.sales_list || getdata).map((item) => ({
       id: item?.id || "",
       name: item?.generic_prodid?.name || "",
@@ -1137,9 +1312,10 @@ const getinvsalesorder = async (request, response) => {
       sales_id: getdata.sales_id,
       contact_no: getdata.contact_no,
       doctor_name: getdata.doctor_name,
-      order_type:getdata.order_type,
+      order_type: getdata.order_type,
+      prescription_image: getdata?.prescription_image,
       username: decryptedUsername,
-      userId:userId,
+      userId: userId,
       delivery_address: getdata.delivery_address,
       district: getdata.district,
       city: getdata.city,
