@@ -1538,14 +1538,9 @@ const createinvoice = async (request, response) => {
 const prescriptioninvoice = async (request, response) => {
   const datetime = getCurrentDateInIST();
   try {
-    const {
-      sales_id,
-      sold_by,
-      medication_details,
-      total_amount,
-      userId,
-      doctor_name,
-    } = request.body;
+    const { sales_id, sold_by, total_amount, userId, doctor_name } =
+      request.body;
+    const medication_details = request.body.medicine_details;
 
     if (!sales_id || !medication_details || !userId) {
       return response.status(400).json({ error: "All fields are required" });
@@ -1582,6 +1577,7 @@ const prescriptioninvoice = async (request, response) => {
       });
 
       for (const medicinedet of medication_details) {
+        console.log({ medicinedet });
         const {
           id,
           name,
@@ -1596,6 +1592,7 @@ const prescriptioninvoice = async (request, response) => {
           category,
         } = medicinedet;
         if (category.some((item) => item.toLowerCase() === "medicines")) {
+          console.log("insidee");
           const medicine = [{ id: id, name: name }];
           console.log({ medicine });
           let newtiming = [];
@@ -1634,21 +1631,26 @@ const prescriptioninvoice = async (request, response) => {
           });
         }
 
-        const net_amount = Number(quantity) * Number(mrp);
-
+        const net_amount = Number(totalQuantity) * Number(mrp);
+        console.log({ sales_id });
         await prisma.sales_list.create({
           data: {
-            sales_id: sales_id,
             generic_prodid: {
               connect: {
-                id: medicine?.product_id,
+                id: id,
               },
             },
-            order_qty: Number(quantity),
+            sales_order: {
+              connect: {
+                sales_id: sales_id,
+              },
+            },
+
+            order_qty: Number(totalQuantity),
             net_amount: net_amount,
             created_date: datetime,
             batch_no: batch_no,
-            selling_price: selling_price,
+            selling_price: Number(selling_price),
           },
         });
       }
