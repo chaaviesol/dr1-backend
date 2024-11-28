@@ -1137,6 +1137,7 @@ const getinvsalesorder = async (request, response) => {
       sales_id: getdata.sales_id,
       contact_no: getdata.contact_no,
       doctor_name: getdata.doctor_name,
+      order_type:getdata.order_type,
       username: decryptedUsername,
       userId:userId,
       delivery_address: getdata.delivery_address,
